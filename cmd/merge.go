@@ -17,14 +17,19 @@ var mergeCmd = &cobra.Command{
 	Long: `The merge command combines multiple PDF files into a single output PDF.
 The input order is preserved in the merged document.`,
 	Example: `  pdforge merge invoice-jan.pdf invoice-feb.pdf
-  pdforge merge part1.pdf part2.pdf appendix.pdf`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("pdforge merge called")
+	pdforge merge part1.pdf part2.pdf appendix.pdf -o merged.pdf`,
+	Args: cobra.MinimumNArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		fmt.Fprintf(cmd.OutOrStdout(), "pdforge merge called with %d input files, output: %s\n", len(args), mergeOutput)
+		return nil
 	},
 }
 
+var mergeOutput string
+
 func init() {
 	rootCmd.AddCommand(mergeCmd)
+	mergeCmd.Flags().StringVarP(&mergeOutput, "output", "o", "merged.pdf", "Output PDF file path")
 
 	// Here you will define your flags and configuration settings.
 

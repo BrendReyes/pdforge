@@ -17,14 +17,25 @@ var splitCmd = &cobra.Command{
 	Long: `The split command extracts pages from a source PDF based on page selections.
 Use it to isolate specific pages or ranges from larger documents.`,
 	Example: `  pdforge split report.pdf
-  pdforge split handbook.pdf`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("pdforge split called")
+	pdforge split handbook.pdf -p 1-3,5 -o ./split_out`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		fmt.Fprintf(cmd.OutOrStdout(), "pdforge split called with input: %s, pages: %s, output dir: %s\n", args[0], splitPages, splitOutputDir)
+		return nil
 	},
 }
 
+var splitPages string
+var splitOutputDir string
+
 func init() {
 	rootCmd.AddCommand(splitCmd)
+	splitCmd.Flags().StringVarP(&splitPages, "pages", "p", "", "Page selection (example: 1-3,5,8-10)")
+	splitCmd.Flags().StringVarP(&splitOutputDir, "output", "o", ".", "Output directory for split files")
+
+	if err := splitCmd.MarkFlagRequired("pages"); err != nil {
+		panic(err)
+	}
 
 	// Here you will define your flags and configuration settings.
 

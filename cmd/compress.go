@@ -6,6 +6,8 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -17,14 +19,34 @@ var compressCmd = &cobra.Command{
 	Long: `The compress command optimizes a PDF while preserving document usability.
 Use it to make PDF files easier to store and share.`,
 	Example: `  pdforge compress large-report.pdf
-  pdforge compress archive.pdf`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("pdforge compress called")
+	pdforge compress archive.pdf -o archive_compressed.pdf`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		output := compressOutput
+		if output == "" {
+			output = defaultCompressedOutput(args[0])
+		}
+
+		fmt.Fprintf(cmd.OutOrStdout(), "pdforge compress called with input: %s, output: %s\n", args[0], output)
+		return nil
 	},
+}
+
+var compressOutput string
+
+func defaultCompressedOutput(inputPath string) string {
+	ext := filepath.Ext(inputPath)
+	if ext == "" {
+		ext = ".pdf"
+	}
+
+	base := strings.TrimSuffix(filepath.Base(inputPath), filepath.Ext(inputPath))
+	return filepath.Join(filepath.Dir(inputPath), base+"_compressed"+ext)
 }
 
 func init() {
 	rootCmd.AddCommand(compressCmd)
+	compressCmd.Flags().StringVarP(&compressOutput, "output", "o", "", "Output PDF file path (default: <input>_compressed.pdf)")
 
 	// Here you will define your flags and configuration settings.
 
