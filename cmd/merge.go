@@ -6,7 +6,6 @@ package cmd
 
 import (
 	"fmt"
-	//"errors"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/spf13/cobra"
@@ -16,12 +15,10 @@ import (
 var mergeCmd = &cobra.Command{
 	Use:   "merge <file1.pdf> <file2.pdf> [more.pdf...]",
 	Short: "Merge two or more PDF files into one document",
-	Args: cobra.MinimumNArgs(2),
-	Long: `The merge command combines multiple PDF files into a single output PDF.
-The input order is preserved in the merged document.`,
-	Example: `  pdforge merge invoice-jan.pdf invoice-feb.pdf
-  pdforge merge part1.pdf part2.pdf appendix.pdf`,
+	Long: "The merge command combines multiple PDF files into a single output PDF. The input order is preserved in the merged document.",
+	Example: "pdforge merge invoice-jan.pdf invoice-feb.pdf\npdforge merge file1.pdf file2.pdf -o result.pdf",
 	RunE: runMerge,
+	Args: cobra.MinimumNArgs(2),
 }
 
 func init() {
@@ -52,7 +49,7 @@ func runMerge(cmd *cobra.Command, args []string) error {
 
 	err = api.MergeCreateFile(args, output, false, nil)
 	if err != nil {
-		return fmt.Errorf("merge err: %w", err)
+		return err
 	}
 
 	fmt.Printf("merge completed, saved to %s\n", output)
