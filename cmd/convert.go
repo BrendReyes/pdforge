@@ -12,16 +12,14 @@ import (
 
 // convertCmd represents the convert command
 var convertCmd = &cobra.Command{
-	Use:   "convert",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "convert <image1> [image2 ...]",
+	Short: "Convert image files into a single PDF",
+	Long: `The convert command creates a PDF from one or more image files.
+Use it to package scanned pages or image sets into one document.`,
+	Example: `  pdforge convert scan1.jpg scan2.jpg
+  pdforge convert page.png diagram.tiff`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("convert called")
+		fmt.Println("pdforge convert called")
 	},
 }
 

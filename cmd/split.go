@@ -12,16 +12,14 @@ import (
 
 // splitCmd represents the split command
 var splitCmd = &cobra.Command{
-	Use:   "split",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "split <file.pdf>",
+	Short: "Split a PDF into selected pages or ranges",
+	Long: `The split command extracts pages from a source PDF based on page selections.
+Use it to isolate specific pages or ranges from larger documents.`,
+	Example: `  pdforge split report.pdf
+  pdforge split handbook.pdf`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("split called")
+		fmt.Println("pdforge split called")
 	},
 }
 

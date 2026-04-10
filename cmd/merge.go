@@ -12,16 +12,14 @@ import (
 
 // mergeCmd represents the merge command
 var mergeCmd = &cobra.Command{
-	Use:   "merge",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "merge <file1.pdf> <file2.pdf> [more.pdf...]",
+	Short: "Merge two or more PDF files into one document",
+	Long: `The merge command combines multiple PDF files into a single output PDF.
+The input order is preserved in the merged document.`,
+	Example: `  pdforge merge invoice-jan.pdf invoice-feb.pdf
+  pdforge merge part1.pdf part2.pdf appendix.pdf`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("merge called")
+		fmt.Println("pdforge merge called")
 	},
 }
 

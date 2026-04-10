@@ -10,18 +10,61 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const anvilArt = `⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢰⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⡄⠀⠀⠀⠀⠀
+⠀⠹⣿⣿⣿⣿⡇⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⢠⣄⡀⠀⠀
+⠀⠀⠙⢿⣿⣿⡇⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⢸⣿⣿⡶⠀
+⠀⠀⠀⠀⠉⠛⠇⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠸⠟⠋⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠸⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠇⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣶⣶⣶⣶⣶⣶⣶⣶⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⣀⣀⣈⣉⣉⣉⣉⣉⣉⣉⣉⣉⣉⣉⣉⣉⣉⣁⣀⣀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀`
 
+const rootHelpTemplate = `{{pdArt}}
+
+{{pdTitle "PDFORGE"}}
+{{pdMuted "Local, privacy-first PDF toolkit"}}
+
+{{pdTitle "USAGE"}}
+	{{.UseLine}}
+
+{{if .HasAvailableSubCommands}}{{pdTitle "COMMANDS"}}
+{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}{{if not .Hidden}}  {{pdAccent (rpad .Name .NamePadding)}} {{.Short}}
+{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+{{pdTitle "FLAGS"}}
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
+{{pdTitle "GLOBAL FLAGS"}}
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .Example}}
+
+{{pdTitle "EXAMPLES"}}
+{{.Example}}{{end}}
+
+{{pdMuted "Run pdforge [command] --help for detailed command usage."}}
+`
+
+var enableANSI = shouldUseColor()
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "pdforge",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short: "pdforge: local, privacy-first PDF toolkit",
+	Long: `pdforge is a local, open-source CLI for common PDF workflows.
+All processing happens on your machine, with no uploads and no cloud dependency.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Command set:
+  - merge: combine multiple PDF files
+  - split: extract selected pages from a PDF
+  - compress: reduce PDF file size
+  - convert: turn image files into a PDF`,
+	Example: `  pdforge merge a.pdf b.pdf
+  pdforge split report.pdf
+  pdforge compress large.pdf
+  pdforge convert page1.jpg page2.png`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -36,7 +79,48 @@ func Execute() {
 	}
 }
 
+func shouldUseColor() bool {
+	if os.Getenv("NO_COLOR") != "" {
+		return false
+	}
+
+	fi, err := os.Stdout.Stat()
+	if err != nil {
+		return false
+	}
+
+	return (fi.Mode() & os.ModeCharDevice) != 0
+}
+
+func paint(s, code string) string {
+	if !enableANSI {
+		return s
+	}
+
+	return code + s + "\x1b[0m"
+}
+
 func init() {
+	cobra.AddTemplateFunc("pdArt", func() string {
+		return anvilArt
+	})
+
+	cobra.AddTemplateFunc("pdTitle", func(s string) string {
+		return paint(s, "\x1b[1;36m")
+	})
+
+	cobra.AddTemplateFunc("pdAccent", func(s string) string {
+		return paint(s, "\x1b[1;37m")
+	})
+
+	cobra.AddTemplateFunc("pdMuted", func(s string) string {
+		return paint(s, "\x1b[90m")
+	})
+
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+	rootCmd.SilenceUsage = true
+	rootCmd.SetHelpTemplate(rootHelpTemplate)
+
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.

@@ -1,4 +1,4 @@
-# 🔥 SPARK Project Plan — Forge
+# 🔥 SPARK Project Plan — pdforge
 
 > **A local, open-source PDF toolkit that keeps your data yours.**
 
@@ -67,14 +67,14 @@
 ### Architecture
 
 ```
-forge/
+pdforge/
 ├── main.go                  # Entry point
 ├── cmd/                     # CLI commands (Cobra)
 │   ├── root.go              # Root command + version
-│   ├── merge.go             # forge merge
-│   ├── split.go             # forge split
-│   ├── compress.go          # forge compress
-│   └── convert.go           # forge convert
+│   ├── merge.go             # pdforge merge
+│   ├── split.go             # pdforge split
+│   ├── compress.go          # pdforge compress
+│   └── convert.go           # pdforge convert
 └── internal/pdf/            # Core logic (wraps pdfcpu)
     ├── merge.go
     ├── split.go
@@ -97,8 +97,8 @@ forge/
 | Week | Milestone | Deliverable |
 |------|-----------|-------------|
 | **Week 1** | Project Setup | Go project scaffolded, dependencies installed, directory structure created |
-| **Week 1** | Core Merge & Split | `forge merge` and `forge split` working end-to-end |
-| **Week 2** | Core Compress & Convert | `forge compress` and `forge convert` working end-to-end |
+| **Week 1** | Core Merge & Split | `pdforge merge` and `pdforge split` working end-to-end |
+| **Week 2** | Core Compress & Convert | `pdforge compress` and `pdforge convert` working end-to-end |
 | **Week 2** | Polish & Ship | README, error handling, cross-platform binary builds |
 | **Future** | Web Dashboard | Browser-based UI wrapping the CLI functionality |
 
