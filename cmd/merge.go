@@ -6,7 +6,9 @@ package cmd
 
 import (
 	"fmt"
+	//"errors"
 
+	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/spf13/cobra"
 )
 
@@ -14,6 +16,7 @@ import (
 var mergeCmd = &cobra.Command{
 	Use:   "merge <file1.pdf> <file2.pdf> [more.pdf...]",
 	Short: "Merge two or more PDF files into one document",
+	Args: cobra.MinimumNArgs(2),
 	Long: `The merge command combines multiple PDF files into a single output PDF.
 The input order is preserved in the merged document.`,
 	Example: `  pdforge merge invoice-jan.pdf invoice-feb.pdf
@@ -23,6 +26,8 @@ The input order is preserved in the merged document.`,
 		fmt.Fprintf(cmd.OutOrStdout(), "pdforge merge called with %d input files, output: %s\n", len(args), mergeOutput)
 		return nil
 	},
+  pdforge merge part1.pdf part2.pdf appendix.pdf`,
+	RunE: runMerge,
 }
 
 var mergeOutput string
@@ -31,6 +36,7 @@ func init() {
 	rootCmd.AddCommand(mergeCmd)
 	mergeCmd.Flags().StringVarP(&mergeOutput, "output", "o", "merged.pdf", "Output PDF file path")
 
+	mergeCmd.Flags().StringP("output", "o", "merged.pdf", "Output file name") // (flag name, shortcut, default naming, name set)
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
@@ -40,4 +46,26 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// mergeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func runMerge(cmd *cobra.Command, args []string) error {
+	fmt.Println("merge command called")
+
+	if len(args) < 2 {
+		return fmt.Errorf("Must have at least 2 pdf files to merge")
+	}
+
+	output, err := cmd.Flags().GetString("output")
+    if err != nil {
+        return err
+    }
+
+	err = api.MergeCreateFile(args, output, false, nil)
+	if err != nil {
+		return fmt.Errorf("merge err: %w", err)
+	}
+
+	fmt.Printf("merge completed, saved to %s\n", output)
+	
+	return nil
 }
