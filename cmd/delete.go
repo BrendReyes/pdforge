@@ -15,8 +15,9 @@ var deleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete a specific page in PDF",
 	Long: `A longer description`,
-	RunE: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Println("delete called")
+		return nil
 	},
 }
 
