@@ -23,9 +23,41 @@ TODO:
 [x] Check if file already exist
 **/
 
+/** 
+EDGE CASES TO CHECK
+Input files (args):
+
+[x]Valid .pdf files → no error
+[x]A .png file in args → error
+[x]A .docx file in args → error
+[x]A file with no extension → error
+[x]A file with .PDF uppercase extension → interesting, does your check catch it?
+[x]Empty string as a filename → error
+[x]Full path with valid .pdf → no error e.g. /Users/john/file.pdf
+[x]Full path with invalid extension → error e.g. /Users/john/file.png
+
+Output filename:
+
+[x]Valid result.pdf → no error
+[x]No extension result → error
+[x]Wrong extension result.png → error
+[x].pdf uppercase result.PDF → does it catch it?
+[x]Just .pdf with no base name → edge case worth knowing
+[x]Output with full path /Users/john/result.pdf → how does it behave with --dir combined?
+
+Directory:
+
+[x]Valid existing directory → no error
+[x]Non-existing directory → error
+[x]A file path instead of directory → error
+[x]Empty string → error
+[x]. current directory → no error
+[x].. parent directory → no error
+**/
+
 // mergeCmd represents the merge command
 var mergeCmd = &cobra.Command{
-	Use:   "merge <file1.pdf> <file2.pdf> *use quotation for filename with spaces or special char* [more.pdf...]",
+	Use:   "merge <file1.pdf> <file2.pdf> *use quotation for filename or directory with spaces or special char* [more.pdf...]",
 	Short: "Merge two or more PDF files into one document",
 	Long: "The merge command combines multiple PDF files into a single output PDF. The input order is preserved in the merged document.",
 	Example: "pdforge merge invoice-jan.pdf invoice-feb.pdf\npdforge merge file1.pdf file2.pdf -o result.pdf",
@@ -48,13 +80,33 @@ func init() {
 }
 
 func runMerge(cmd *cobra.Command, args []string) error {
+
+	dir, err := cmd.Flags().GetString("dir")
+	if err != nil {
+		return err
+	}
+
+	// --dir validator
+	dirInfo, err := os.Stat(dir)
+	if err != nil {
+    	return fmt.Errorf("directory '%s' does not exist", dir)
+	}
+	if !dirInfo.IsDir() {
+		return fmt.Errorf("'%s' is not a directory", dir)
+	}
 	
 	// Invalid args checker
 	for _, item := range args {
 		ftype := strings.ToLower(filepath.Ext(item))
 		if ftype != ".pdf" {
-			return fmt.Errorf("The file '%s' is Invalid, must be '.pdf'", filepath.Base(item))
+			return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(item))
 		}
+		
+		/*
+		err := api.ValidateFile(item, nil)
+		if err != nil {
+    		return fmt.Errorf("invalid PDF '%s': \n%v", filepath.Base(item), err)
+		}*/
 	}
 	
 	output, err := cmd.Flags().GetString("output")
@@ -70,20 +122,6 @@ func runMerge(cmd *cobra.Command, args []string) error {
 	fileType := strings.ToLower(filepath.Ext(output))
 	if fileType != ".pdf" {
 		return fmt.Errorf("The file '%s' is Invalid, must be '.pdf'", output)
-	}
-
-	dir, err := cmd.Flags().GetString("dir")
-	if err != nil {
-		return err
-	}
-
-	// --dir validator
-	dirInfo, err := os.Stat(dir)
-	if err != nil {
-    	return fmt.Errorf("directory '%s' does not exist", dir)
-	}
-	if !dirInfo.IsDir() {
-		return fmt.Errorf("'%s' is not a directory", dir)
 	}
 
 	output = filepath.Join(dir, output)
