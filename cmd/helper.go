@@ -7,24 +7,48 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 )
 
-func printFileInfo(output string) error {
+type FileInfoReport struct {
+	Name 		string
+	Bytes 		int64
+	PageCount 	int
+	Location 	string
+}
+
+func GetFileInfo(output string) (*FileInfoReport, error) {
 	info, err := os.Stat(output) 
 	if err != nil {
-		return fmt.Errorf("Getting file info error: %w", err)
+		return nil, fmt.Errorf("Getting file info error: %w", err)
 	}
-	megabytes := float64(info.Size()) / (1024 * 1024)
 
 	path, err := filepath.Abs(output)
 	if err != nil {
-		return fmt.Errorf("error in getting path, err: %w", err)
+		return nil, fmt.Errorf("error in getting path, err: %w", err)
 	}
 
 	pageCount, err := api.PageCountFile(output)
 	if err != nil {
-		return fmt.Errorf("Page count error: %w", err)
+		return nil, fmt.Errorf("Page count error: %w", err)
 	}
 
-	fmt.Printf("Name: %s\nSize: %.2f MB\nTotal Pages: %d\nLocation: %s\n", info.Name(), megabytes, pageCount, filepath.Dir(path))
+	return &FileInfoReport{
+        Name:      info.Name(),
+		Bytes: 	   info.Size(),
+        PageCount: pageCount,
+        Location:  filepath.Dir(path),
+    }, nil
 
-	return nil
+}
+
+func (r *FileInfoReport) PrintReport() {
+	var fileSize string
+	sizeMB := float64(r.Bytes) / (1024 * 1024)
+	sizeKB := float64(r.Bytes) / (1024)
+
+	if sizeMB >= 1 {
+		fileSize = fmt.Sprintf("%.2f MB", sizeMB)
+	} else {
+		fileSize = fmt.Sprintf("%.2f KB", sizeKB)
+	}
+
+	fmt.Printf("Name: %s\nSize: %s\nPages: %d\nLocation: %s\n", r.Name, fileSize, r.PageCount, r.Location)
 }

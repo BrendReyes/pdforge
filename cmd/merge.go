@@ -7,6 +7,7 @@ package cmd
 import (
 	"fmt"
 	"time"
+	"log"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/spf13/cobra"
 )
@@ -59,10 +60,11 @@ func runMerge(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("===== Merged Completed =====")
-	err = printFileInfo(output)
+	report, err := GetFileInfo(output)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
-	
+	report.PrintReport() 
+
 	return nil
 }
