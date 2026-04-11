@@ -5,6 +5,7 @@ import (
 	"fmt"	
 	"path/filepath"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"strings"
 )
 
 type FileInfoReport struct {
@@ -51,4 +52,25 @@ func (r *FileInfoReport) PrintReport() {
 	}
 
 	fmt.Printf("Name: %s\nSize: %s\nPages: %d\nLocation: %s\n", r.Name, fileSize, r.PageCount, r.Location)
+}
+
+// this is to avoid overwriting a file with same name
+func resolveOutputPath(output string) string {
+    _, err := os.Stat(output)
+    if os.IsNotExist(err) {
+        return output
+    }
+
+    ext := filepath.Ext(output)
+    base := strings.TrimSuffix(output, ext)
+    counter := 1
+
+    for {
+        candidate := fmt.Sprintf("%s (%d)%s", base, counter, ext)
+        _, err := os.Stat(candidate)
+        if os.IsNotExist(err) {
+            return candidate
+        }
+        counter++
+    }
 }

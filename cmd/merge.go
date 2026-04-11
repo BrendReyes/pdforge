@@ -53,6 +53,7 @@ func runMerge(cmd *cobra.Command, args []string) error {
         return err
     }
 
+	output = resolveOutputPath(output)
 
 	err = api.MergeCreateFile(args, output, false, nil)
 	if err != nil {
