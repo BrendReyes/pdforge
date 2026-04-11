@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/spf13/cobra"
+	"github.com/schollz/progressbar/v3"
 	
 )
 /**
@@ -96,17 +97,20 @@ func runMerge(cmd *cobra.Command, args []string) error {
 	}
 	
 	// Invalid args checker
+	bar := progressbar.Default(int64(len(args)), "Validating files")
 	for _, item := range args {
 		ftype := strings.ToLower(filepath.Ext(item))
 		if ftype != ".pdf" {
 			return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(item))
 		}
 		
-		/*
+		
 		err := api.ValidateFile(item, nil)
 		if err != nil {
     		return fmt.Errorf("invalid PDF '%s': \n%v", filepath.Base(item), err)
-		}*/
+		}
+
+		bar.Add(1)
 	}
 	
 	output, err := cmd.Flags().GetString("output")
@@ -127,10 +131,12 @@ func runMerge(cmd *cobra.Command, args []string) error {
 	output = filepath.Join(dir, output)
 	output = resolveOutputPath(output) // Duplicate overwrite function
 
+	bar = progressbar.Default(-1, "Merging")
 	err = api.MergeCreateFile(args, output, false, nil)
 	if err != nil {
 		return err
 	}
+	bar.Finish()
 
 	fmt.Println("===== Merged Completed =====")
 	report, err := GetFileInfo(output)
