@@ -6,9 +6,7 @@ package cmd
 
 import (
 	"fmt"
-	//"os"
 	"time"
-	"path/filepath"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/spf13/cobra"
 )
@@ -17,7 +15,7 @@ TODO:
 [] Remove the overwriting a same file name
 [] Implement ability to choose a directory to store the file
 [x] Auto naming
-[] Summary output
+[x] Summary output
 [] Check if file already exist
 **/
 
@@ -36,7 +34,7 @@ func init() {
 	
 	rootCmd.AddCommand(mergeCmd)
 	mergeCmd.Flags().StringP("output", "o", "merged_" + currentTime.Format("20060102_150405") + ".pdf", "Output file name") // (flag name, shortcut, default naming, name set)
-	mergeCmd.Flags().StringP("append", "a", "append_merged.pdf", "Output file name")
+	//mergeCmd.Flags().StringP("append", "a", "append_merged.pdf", "Output file name")
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
@@ -48,9 +46,6 @@ func init() {
 }
 
 func runMerge(cmd *cobra.Command, args []string) error {
-	if len(args) < 2 {
-		return fmt.Errorf("Must have at least 2 pdf files to merge")
-	}
 
 	output, err := cmd.Flags().GetString("output")
     if err != nil {
@@ -63,13 +58,11 @@ func runMerge(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-
-	path, err := filepath.Abs(output)
+	fmt.Println("===== Merged Completed =====")
+	err = printFileInfo(output)
 	if err != nil {
-		fmt.Printf("error in getting path, err: %v", err)
+		return err
 	}
-
-	fmt.Printf("merge completed, file name: %s\n", output)
-	fmt.Printf("Location: %s\n", filepath.Dir(path))
+	
 	return nil
 }
