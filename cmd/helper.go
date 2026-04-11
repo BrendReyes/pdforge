@@ -1,11 +1,11 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
-	"fmt"	
+	"strings"
 	"path/filepath"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
-	"strings"
 )
 
 type FileInfoReport struct {
@@ -55,6 +55,7 @@ func (r *FileInfoReport) PrintReport() {
 }
 
 // this is to avoid overwriting a file with same name
+// e.g. merged (1).pdf, merged (2).pdf
 func resolveOutputPath(output string) string {
     _, err := os.Stat(output)
     if os.IsNotExist(err) {

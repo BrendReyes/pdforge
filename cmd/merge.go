@@ -7,17 +7,18 @@ package cmd
 import (
 	"fmt"
 	"time"
-	"log"
+	"os"
+	"path/filepath"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/spf13/cobra"
 )
 /**
 TODO:
-[] Remove the overwriting a same file name
-[] Implement ability to choose a directory to store the file
+[x] Remove the overwriting a same file name
+[x] Implement ability to choose a directory to store the file
 [x] Auto naming
 [x] Summary output
-[] Check if file already exist
+[x] Check if file already exist
 **/
 
 // mergeCmd represents the merge command
@@ -32,10 +33,15 @@ var mergeCmd = &cobra.Command{
 
 func init() {
 	currentTime := time.Now()
+
+	cwd, err := os.Getwd()
+    if err != nil {
+        cwd = "."
+    }
 	
 	rootCmd.AddCommand(mergeCmd)
 	mergeCmd.Flags().StringP("output", "o", "merged_" + currentTime.Format("20060102_150405") + ".pdf", "Output file name") // (flag name, shortcut, default naming, name set)
-	//mergeCmd.Flags().StringP("append", "a", "append_merged.pdf", "Output file name")
+	mergeCmd.Flags().StringP("dir", "d", cwd, "directory")
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
@@ -53,6 +59,17 @@ func runMerge(cmd *cobra.Command, args []string) error {
         return err
     }
 
+	dir, err := cmd.Flags().GetString("dir")
+	if err != nil {
+		return err
+	}
+
+	dirInfo, err := os.Stat(dir)
+	if err != nil || !dirInfo.IsDir() {
+    	return fmt.Errorf("directory '%s' does not exist", dir)
+	}
+
+	output = filepath.Join(dir, output)
 	output = resolveOutputPath(output)
 
 	err = api.MergeCreateFile(args, output, false, nil)
@@ -63,7 +80,7 @@ func runMerge(cmd *cobra.Command, args []string) error {
 	fmt.Println("===== Merged Completed =====")
 	report, err := GetFileInfo(output)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	report.PrintReport() 
 
