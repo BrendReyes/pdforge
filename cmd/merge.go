@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"time"
 	"os"
+	"strings"
 	"path/filepath"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/spf13/cobra"
+	
 )
 /**
 TODO:
@@ -23,7 +25,7 @@ TODO:
 
 // mergeCmd represents the merge command
 var mergeCmd = &cobra.Command{
-	Use:   "merge <file1.pdf> <file2.pdf> [more.pdf...]",
+	Use:   "merge <file1.pdf> <file2.pdf> *use quotation for filename with spaces or special char* [more.pdf...]",
 	Short: "Merge two or more PDF files into one document",
 	Long: "The merge command combines multiple PDF files into a single output PDF. The input order is preserved in the merged document.",
 	Example: "pdforge merge invoice-jan.pdf invoice-feb.pdf\npdforge merge file1.pdf file2.pdf -o result.pdf",
@@ -32,45 +34,60 @@ var mergeCmd = &cobra.Command{
 }
 
 func init() {
-	currentTime := time.Now()
 
-	cwd, err := os.Getwd()
+	
+	currentDir, err := os.Getwd() 
     if err != nil {
-        cwd = "."
+        currentDir = "."
     }
 	
+	
 	rootCmd.AddCommand(mergeCmd)
-	mergeCmd.Flags().StringP("output", "o", "merged_" + currentTime.Format("20060102_150405") + ".pdf", "Output file name") // (flag name, shortcut, default naming, name set)
-	mergeCmd.Flags().StringP("dir", "d", cwd, "directory")
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// mergeCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// mergeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	mergeCmd.Flags().StringP("output", "o", "", "Location with filename")
+	mergeCmd.Flags().StringP("dir", "d", currentDir, "directory")
 }
 
 func runMerge(cmd *cobra.Command, args []string) error {
-
+	
+	// Invalid args checker
+	for _, item := range args {
+		ftype := strings.ToLower(filepath.Ext(item))
+		if ftype != ".pdf" {
+			return fmt.Errorf("The file '%s' is Invalid, must be '.pdf'", filepath.Base(item))
+		}
+	}
+	
 	output, err := cmd.Flags().GetString("output")
     if err != nil {
         return err
     }
+
+	// auto naming the file if no name is passed
+	if output == "" {
+		output = "merged_" + time.Now().Format("20060102_150405") + ".pdf"
+	}
+
+	fileType := strings.ToLower(filepath.Ext(output))
+	if fileType != ".pdf" {
+		return fmt.Errorf("The file '%s' is Invalid, must be '.pdf'", output)
+	}
 
 	dir, err := cmd.Flags().GetString("dir")
 	if err != nil {
 		return err
 	}
 
+	// --dir validator
 	dirInfo, err := os.Stat(dir)
-	if err != nil || !dirInfo.IsDir() {
+	if err != nil {
     	return fmt.Errorf("directory '%s' does not exist", dir)
+	}
+	if !dirInfo.IsDir() {
+		return fmt.Errorf("'%s' is not a directory", dir)
 	}
 
 	output = filepath.Join(dir, output)
-	output = resolveOutputPath(output)
+	output = resolveOutputPath(output) // Duplicate overwrite function
 
 	err = api.MergeCreateFile(args, output, false, nil)
 	if err != nil {
