@@ -31,3 +31,13 @@ go.work
 
 # Documents folder
 documents/
+
+pdforge
+
+# Random pdf file for testing
+invalid_pdf/
+kaggle_test_files/
+pdfwithpass/
+random_test_files/
+test_files/
+test_files_2/

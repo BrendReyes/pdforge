@@ -27,7 +27,7 @@ This checklist tracks implementation progress for the pdforge CLI MVP.
 
 ## 3) Core PDF Logic (internal/pdf)
 
-- [ ] MergeFiles implemented with pdfcpu
+- [x] MergeFiles implemented with pdfcpu
 - [ ] SplitByPages implemented with pdfcpu
 - [ ] CompressFile implemented with pdfcpu
 - [ ] ImagesToPDF implemented with pdfcpu
