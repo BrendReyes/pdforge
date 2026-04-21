@@ -59,6 +59,7 @@ All processing happens on your machine, with no uploads and no cloud dependency.
 Command set:
   - merge: combine multiple PDF files
   - split: extract selected pages from a PDF
+  - rmpage: remove pages from a PDF
   - compress: reduce PDF file size
   - convert: turn image files into a PDF`,
 	Example: `  pdforge merge a.pdf b.pdf
