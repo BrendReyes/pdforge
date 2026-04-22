@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -65,12 +64,8 @@ If the output file exists, pdforge auto-increments the filename (example: remove
 			outDir = "."
 		}
 
-		dirInfo, err := os.Stat(outDir)
-		if err != nil {
-			return fmt.Errorf("directory '%s' does not exist", outDir)
-		}
-		if !dirInfo.IsDir() {
-			return fmt.Errorf("'%s' is not a directory", outDir)
+		if err := ensureOutputDirectory(cmd, outDir); err != nil {
+			return err
 		}
 
 		output = resolveOutputPathCompact(output)
@@ -82,12 +77,12 @@ If the output file exists, pdforge auto-increments the filename (example: remove
 		}
 		_ = bar.Finish()
 
-		fmt.Println("===== Page Removal Completed =====")
+		fmt.Fprintln(cmd.OutOrStdout(), "===== Page Removal Completed =====")
 		report, err := GetFileInfo(output)
 		if err != nil {
 			return err
 		}
-		report.PrintReport()
+		report.PrintReport(cmd.OutOrStdout())
 
 		return nil
 	},
@@ -95,28 +90,6 @@ If the output file exists, pdforge auto-increments the filename (example: remove
 
 func defaultRmPageOutputPath(inputPath string) string {
 	return filepath.Join(filepath.Dir(inputPath), "remove.pdf")
-}
-
-// resolveOutputPathCompact appends (N) before extension when file exists.
-// Example: output.pdf -> output(1).pdf
-func resolveOutputPathCompact(output string) string {
-	_, err := os.Stat(output)
-	if os.IsNotExist(err) {
-		return output
-	}
-
-	ext := filepath.Ext(output)
-	base := strings.TrimSuffix(output, ext)
-	counter := 1
-
-	for {
-		candidate := fmt.Sprintf("%s(%d)%s", base, counter, ext)
-		_, err = os.Stat(candidate)
-		if os.IsNotExist(err) {
-			return candidate
-		}
-		counter++
-	}
 }
 
 // parsePageSpecification parses a page specification string and returns a sorted list of unique page numbers

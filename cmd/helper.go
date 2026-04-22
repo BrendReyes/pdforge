@@ -1,22 +1,26 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"os"
-	"strings"
 	"path/filepath"
+	"strings"
+
 	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/spf13/cobra"
 )
 
 type FileInfoReport struct {
-	Name 		string
-	Bytes 		int64
-	PageCount 	int
-	Location 	string
+	Name      string
+	Bytes     int64
+	PageCount int
+	Location  string
 }
 
 func GetFileInfo(output string) (*FileInfoReport, error) {
-	info, err := os.Stat(output) 
+	info, err := os.Stat(output)
 	if err != nil {
 		return nil, fmt.Errorf("Getting file info error: %w", err)
 	}
@@ -32,15 +36,15 @@ func GetFileInfo(output string) (*FileInfoReport, error) {
 	}
 
 	return &FileInfoReport{
-        Name:      info.Name(),
-		Bytes: 	   info.Size(),
-        PageCount: pageCount,
-        Location:  filepath.Dir(path),
-    }, nil
+		Name:      info.Name(),
+		Bytes:     info.Size(),
+		PageCount: pageCount,
+		Location:  filepath.Dir(path),
+	}, nil
 
 }
 
-func (r *FileInfoReport) PrintReport() {
+func (r *FileInfoReport) PrintReport(w io.Writer) {
 	var fileSize string
 	sizeMB := float64(r.Bytes) / (1024 * 1024)
 	sizeKB := float64(r.Bytes) / (1024)
@@ -51,27 +55,93 @@ func (r *FileInfoReport) PrintReport() {
 		fileSize = fmt.Sprintf("%.2f KB", sizeKB)
 	}
 
-	fmt.Printf("Name: %s\nSize: %s\nPages: %d\nLocation: %s\n", r.Name, fileSize, r.PageCount, r.Location)
+	fmt.Fprintf(w, "Name: %s\nSize: %s\nPages: %d\nLocation: %s\n", r.Name, fileSize, r.PageCount, r.Location)
 }
 
 // this is to avoid overwriting a file with same name
 // e.g. merged (1).pdf, merged (2).pdf
 func resolveOutputPath(output string) string {
-    _, err := os.Stat(output)
-    if os.IsNotExist(err) {
-        return output
-    }
+	return resolveOutputPathWithFormat(output, false)
+}
 
-    ext := filepath.Ext(output)
-    base := strings.TrimSuffix(output, ext)
-    counter := 1
+// resolveOutputPathCompact appends (N) before extension when file exists.
+// Example: output.pdf -> output(1).pdf
+func resolveOutputPathCompact(output string) string {
+	return resolveOutputPathWithFormat(output, true)
+}
 
-    for {
-        candidate := fmt.Sprintf("%s (%d)%s", base, counter, ext)
-        _, err := os.Stat(candidate)
-        if os.IsNotExist(err) {
-            return candidate
-        }
-        counter++
-    }
+func resolveOutputPathWithFormat(output string, compact bool) string {
+	_, err := os.Stat(output)
+	if os.IsNotExist(err) {
+		return output
+	}
+
+	ext := filepath.Ext(output)
+	base := strings.TrimSuffix(output, ext)
+	counter := 1
+
+	for {
+		pattern := "%s (%d)%s"
+		if compact {
+			pattern = "%s(%d)%s"
+		}
+
+		candidate := fmt.Sprintf(pattern, base, counter, ext)
+		_, err := os.Stat(candidate)
+		if os.IsNotExist(err) {
+			return candidate
+		}
+		counter++
+	}
+}
+
+func ensureOutputDirectory(cmd *cobra.Command, dir string) error {
+	info, err := os.Stat(dir)
+	if err == nil {
+		if !info.IsDir() {
+			return fmt.Errorf("'%s' is not a directory", dir)
+		}
+		return nil
+	}
+
+	if !os.IsNotExist(err) {
+		return fmt.Errorf("unable to access directory '%s': %w", dir, err)
+	}
+
+	create, promptErr := promptYesNo(cmd, fmt.Sprintf("Directory '%s' does not exist. Create it now? [y/N]: ", dir))
+	if promptErr != nil {
+		return promptErr
+	}
+
+	if !create {
+		return fmt.Errorf("directory '%s' does not exist", dir)
+	}
+
+	if mkErr := os.MkdirAll(dir, 0o755); mkErr != nil {
+		return fmt.Errorf("failed to create directory '%s': %w", dir, mkErr)
+	}
+
+	fmt.Fprintf(cmd.OutOrStdout(), "Created directory: %s\n", dir)
+	return nil
+}
+
+func promptYesNo(cmd *cobra.Command, message string) (bool, error) {
+	stdinInfo, err := os.Stdin.Stat()
+	if err != nil {
+		return false, nil
+	}
+
+	if (stdinInfo.Mode() & os.ModeCharDevice) == 0 {
+		return false, nil
+	}
+
+	fmt.Fprint(cmd.OutOrStdout(), message)
+	reader := bufio.NewReader(cmd.InOrStdin())
+	response, err := reader.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+
+	response = strings.TrimSpace(strings.ToLower(response))
+	return response == "y" || response == "yes", nil
 }

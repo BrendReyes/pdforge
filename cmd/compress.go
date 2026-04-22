@@ -4,7 +4,6 @@ Copyright © 2026 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"image"
@@ -90,7 +89,7 @@ func runCompress(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(cmd.OutOrStdout(), "Detected image-heavy PDF (%d images, %.2f MB embedded image streams).\n", stats.count, float64(stats.totalBytes)/(1024*1024))
 		fmt.Fprintln(cmd.OutOrStdout(), "Suggestion: try --image-mode balanced for safer image-aware compression.")
 
-		enable, promptErr := promptEnableExperimentalImageMode(cmd)
+		enable, promptErr := promptYesNo(cmd, "Enable balanced image mode now? [y/N]: ")
 		if promptErr != nil {
 			return promptErr
 		}
@@ -141,12 +140,8 @@ func runCompress(cmd *cobra.Command, args []string) error {
 		outDir = "."
 	}
 
-	dirInfo, err := os.Stat(outDir)
-	if err != nil {
-		return fmt.Errorf("directory '%s' does not exist", outDir)
-	}
-	if !dirInfo.IsDir() {
-		return fmt.Errorf("'%s' is not a directory", outDir)
+	if err := ensureOutputDirectory(cmd, outDir); err != nil {
+		return err
 	}
 
 	output = resolveOutputPath(output)
@@ -157,12 +152,12 @@ func runCompress(cmd *cobra.Command, args []string) error {
 	}
 	_ = bar.Finish()
 
-	fmt.Println("===== Compression Completed =====")
+	fmt.Fprintln(cmd.OutOrStdout(), "===== Compression Completed =====")
 	report, err := GetFileInfo(output)
 	if err != nil {
 		return err
 	}
-	report.PrintReport()
+	report.PrintReport(cmd.OutOrStdout())
 
 	return nil
 }
@@ -200,28 +195,6 @@ func detectImageHeavyPDF(input string) (imageStats, bool, error) {
 	imageHeavy := stats.count >= imageCountThreshold || stats.totalBytes >= imageBytesThreshold
 	return stats, imageHeavy, nil
 }
-
-func promptEnableExperimentalImageMode(cmd *cobra.Command) (bool, error) {
-	stdinInfo, err := os.Stdin.Stat()
-	if err != nil {
-		return false, nil
-	}
-
-	if (stdinInfo.Mode() & os.ModeCharDevice) == 0 {
-		return false, nil
-	}
-
-	fmt.Fprint(cmd.OutOrStdout(), "Enable balanced image mode now? [y/N]: ")
-	reader := bufio.NewReader(cmd.InOrStdin())
-	response, err := reader.ReadString('\n')
-	if err != nil && err != io.EOF {
-		return false, err
-	}
-
-	response = strings.TrimSpace(strings.ToLower(response))
-	return response == "y" || response == "yes", nil
-}
-
 func resolveImageModeProfile(mode string) imageModeProfile {
 	switch mode {
 	case compressImageModeAggressive:
