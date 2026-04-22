@@ -28,7 +28,7 @@ var compressCmd = &cobra.Command{
 Use it to make PDF files easier to store and share.`,
 	Example: `  pdforge compress large-report.pdf
 	pdforge compress archive.pdf -o archive_compressed.pdf`,
-	Args: cobra.ExactArgs(1),
+	Args: argsWithHelp(cobra.ExactArgs(1)),
 	RunE: runCompress,
 }
 

@@ -25,7 +25,7 @@ Use it to package scanned pages or image sets into one document.`,
 	Example: `  pdforge convert scan1.jpg scan2.jpg
 	pdforge convert page.png diagram.tiff -o converted.pdf`,
 	RunE: runConvert,
-	Args: cobra.MinimumNArgs(1),
+	Args: argsWithHelp(cobra.MinimumNArgs(1)),
 }
 
 func init() {

@@ -22,7 +22,7 @@ var mergeCmd = &cobra.Command{
 	Long:    "The merge command combines multiple PDF files into a single output PDF. The input order is preserved in the merged document.",
 	Example: "pdforge merge invoice-jan.pdf invoice-feb.pdf\npdforge merge file1.pdf file2.pdf -o result.pdf",
 	RunE:    runMerge,
-	Args:    cobra.MinimumNArgs(2),
+	Args:    argsWithHelp(cobra.MinimumNArgs(2)),
 }
 
 func init() {

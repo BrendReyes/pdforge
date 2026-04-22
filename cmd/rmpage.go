@@ -30,7 +30,7 @@ If the output file exists, pdforge auto-increments the filename (example: remove
 	  pdforge rmpage input.pdf --page 1-3
   pdforge rmpage input.pdf 1-3 -o cleaned.pdf
   pdforge rmpage input.pdf 1,6-11,17 -d ./out`,
-	Args: cobra.RangeArgs(1, 2),
+	Args: argsWithHelp(cobra.RangeArgs(1, 2)),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		input := args[0]
 

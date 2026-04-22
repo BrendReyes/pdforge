@@ -27,7 +27,7 @@ If --output is omitted, split uses the default naming pattern for the selected m
   pdforge split input.pdf --page 8
   pdforge split -e input.pdf 6,8-10,11
   pdforge split input.pdf 8 -o section -d ./out`,
-	Args: cobra.RangeArgs(1, 2),
+	Args: argsWithHelp(cobra.RangeArgs(1, 2)),
 	RunE: runSplit,
 }
 
