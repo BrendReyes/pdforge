@@ -61,16 +61,6 @@ func (r *FileInfoReport) PrintReport(w io.Writer) {
 // this is to avoid overwriting a file with same name
 // e.g. merged (1).pdf, merged (2).pdf
 func resolveOutputPath(output string) string {
-	return resolveOutputPathWithFormat(output, false)
-}
-
-// resolveOutputPathCompact appends (N) before extension when file exists.
-// Example: output.pdf -> output(1).pdf
-func resolveOutputPathCompact(output string) string {
-	return resolveOutputPathWithFormat(output, true)
-}
-
-func resolveOutputPathWithFormat(output string, compact bool) string {
 	_, err := os.Stat(output)
 	if os.IsNotExist(err) {
 		return output
@@ -81,12 +71,7 @@ func resolveOutputPathWithFormat(output string, compact bool) string {
 	counter := 1
 
 	for {
-		pattern := "%s (%d)%s"
-		if compact {
-			pattern = "%s(%d)%s"
-		}
-
-		candidate := fmt.Sprintf(pattern, base, counter, ext)
+		candidate := fmt.Sprintf("%s (%d)%s", base, counter, ext)
 		_, err := os.Stat(candidate)
 		if os.IsNotExist(err) {
 			return candidate

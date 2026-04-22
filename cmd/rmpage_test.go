@@ -229,24 +229,14 @@ func TestParsePageSpecification(t *testing.T) {
 	}
 }
 
-func TestDefaultRmPageOutputPath(t *testing.T) {
-	input := "/tmp/docs/input.pdf"
-	got := defaultRmPageOutputPath(input)
-	want := "/tmp/docs/remove.pdf"
-
-	if got != want {
-		t.Fatalf("defaultRmPageOutputPath() = %s, want %s", got, want)
-	}
-}
-
-func TestResolveOutputPathCompact(t *testing.T) {
+func TestResolveOutputPathForRmPage(t *testing.T) {
 	t.Run("no conflict returns original", func(t *testing.T) {
 		dir := t.TempDir()
 		path := filepath.Join(dir, "remove.pdf")
 
-		got := resolveOutputPathCompact(path)
+		got := resolveOutputPath(path)
 		if got != path {
-			t.Fatalf("resolveOutputPathCompact() = %s, want %s", got, path)
+			t.Fatalf("resolveOutputPath() = %s, want %s", got, path)
 		}
 	})
 
@@ -257,10 +247,10 @@ func TestResolveOutputPathCompact(t *testing.T) {
 			t.Fatalf("failed creating fixture file: %v", err)
 		}
 
-		got := resolveOutputPathCompact(path)
-		want := filepath.Join(dir, "remove(1).pdf")
+		got := resolveOutputPath(path)
+		want := filepath.Join(dir, "remove (1).pdf")
 		if got != want {
-			t.Fatalf("resolveOutputPathCompact() = %s, want %s", got, want)
+			t.Fatalf("resolveOutputPath() = %s, want %s", got, want)
 		}
 	})
 
@@ -268,8 +258,8 @@ func TestResolveOutputPathCompact(t *testing.T) {
 		dir := t.TempDir()
 		fixtures := []string{
 			filepath.Join(dir, "report.pdf"),
-			filepath.Join(dir, "report(1).pdf"),
-			filepath.Join(dir, "report(2).pdf"),
+			filepath.Join(dir, "report (1).pdf"),
+			filepath.Join(dir, "report (2).pdf"),
 		}
 
 		for _, f := range fixtures {
@@ -278,10 +268,10 @@ func TestResolveOutputPathCompact(t *testing.T) {
 			}
 		}
 
-		got := resolveOutputPathCompact(filepath.Join(dir, "report.pdf"))
-		want := filepath.Join(dir, "report(3).pdf")
+		got := resolveOutputPath(filepath.Join(dir, "report.pdf"))
+		want := filepath.Join(dir, "report (3).pdf")
 		if got != want {
-			t.Fatalf("resolveOutputPathCompact() = %s, want %s", got, want)
+			t.Fatalf("resolveOutputPath() = %s, want %s", got, want)
 		}
 	})
 }

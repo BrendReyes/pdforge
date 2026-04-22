@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -16,17 +15,19 @@ import (
 
 // splitCmd represents the split command
 var splitCmd = &cobra.Command{
-	Use:   "split [flags] <input.pdf> <selector> [output_dir|output_file ...]",
+	Use:   "split [flags] <input.pdf> [selector]",
 	Short: "Split a PDF by boundary or extract selected ranges",
-	Long: `Default mode splits a PDF into two files at a page boundary.
-Extract mode (-e/--extract) writes one output file per selected segment.
+	Long: `Default mode treats the selector as the last page of the first split.
+For example, 'pdforge split input.pdf 8' creates pages 1-8 in the first file and 9-end in the second.
 
-Examples:
-  pdforge split input.pdf 8
+Use --page to pass the same boundary explicitly, or enable extract mode (-e/--extract) to write one output file per selected segment.
+
+If --output is omitted, split uses the default naming pattern for the selected mode.`,
+	Example: `  pdforge split input.pdf 8
+  pdforge split input.pdf --page 8
   pdforge split -e input.pdf 6,8-10,11
-  pdforge split -e --odd input.pdf 1-8
-  pdforge split -e input.pdf 1,4 ~/Documents`,
-	Args: cobra.MinimumNArgs(2),
+  pdforge split input.pdf 8 -o section -d ./out`,
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runSplit,
 }
 
@@ -39,16 +40,34 @@ var splitExtract bool
 var splitOdd bool
 var splitEven bool
 var splitVerbose bool
-var splitOutputDir string
+var splitOutput string
+var splitDir string
+var splitPage string
 
 func runSplit(cmd *cobra.Command, args []string) error {
-	if looksLikeSelector(args[0]) && strings.ToLower(filepath.Ext(args[1])) == ".pdf" {
+	if len(args) > 1 && looksLikeSelector(args[0]) && strings.ToLower(filepath.Ext(args[1])) == ".pdf" {
 		return fmt.Errorf("invalid argument order: expected '<input.pdf> <selector>', got '<selector> <input.pdf>'")
 	}
 
 	input := args[0]
-	selector := strings.TrimSpace(args[1])
-	extra := args[2:]
+
+	pageFlag := strings.TrimSpace(splitPage)
+	positionalSelector := ""
+	if len(args) == 2 {
+		positionalSelector = strings.TrimSpace(args[1])
+	}
+
+	if positionalSelector != "" && pageFlag != "" {
+		return fmt.Errorf("provide selector either as positional argument or via --page, not both")
+	}
+
+	selector := pageFlag
+	if selector == "" {
+		selector = positionalSelector
+	}
+	if selector == "" {
+		return fmt.Errorf("missing selector: provide [selector] or --page")
+	}
 
 	if strings.ToLower(filepath.Ext(input)) != ".pdf" {
 		return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(input))
@@ -79,7 +98,7 @@ func runSplit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	outputPaths, err := resolveSplitOutputs(cmd, input, jobs, extra)
+	outputPaths, err := resolveSplitOutputs(cmd, input, jobs)
 	if err != nil {
 		return err
 	}
@@ -219,42 +238,16 @@ func parseSegment(token string, pageCount int) ([]int, error) {
 	return buildRange(start, end), nil
 }
 
-func resolveSplitOutputs(cmd *cobra.Command, inputPath string, jobs []splitJob, extra []string) ([]string, error) {
-	if splitOutputDir != "" && len(extra) > 0 {
-		return nil, fmt.Errorf("cannot combine --output-dir with positional output arguments")
-	}
-
+func resolveSplitOutputs(cmd *cobra.Command, inputPath string, jobs []splitJob) ([]string, error) {
 	if len(jobs) == 0 {
 		return nil, fmt.Errorf("no split jobs to process")
 	}
 
-	if len(extra) == len(jobs) && len(jobs) > 1 {
-		return resolveExplicitOutputFiles(cmd, extra)
-	}
-
-	if len(jobs) == 1 && len(extra) == 1 && splitOutputDir == "" {
-		asFile, err := resolveSingleOutputArg(cmd, extra[0])
-		if err != nil {
-			return nil, err
-		}
-		if asFile != "" {
-			return []string{asFile}, nil
-		}
-	}
-
-	if len(extra) > 1 {
-		return nil, fmt.Errorf("output argument mismatch: provide one output directory or %d output files", len(jobs))
-	}
-
-	baseDir := splitOutputDir
+	baseDir := splitDir
 	if baseDir == "" {
-		if len(extra) == 1 {
-			baseDir = extra[0]
-		} else {
-			baseDir = filepath.Dir(inputPath)
-			if baseDir == "" {
-				baseDir = "."
-			}
+		baseDir = filepath.Dir(inputPath)
+		if baseDir == "" {
+			baseDir = "."
 		}
 	}
 
@@ -262,59 +255,14 @@ func resolveSplitOutputs(cmd *cobra.Command, inputPath string, jobs []splitJob, 
 		return nil, err
 	}
 
-	paths := make([]string, 0, len(jobs))
-	for _, job := range jobs {
-		name := fmt.Sprintf("split_%s.pdf", job.Label)
-		candidate := filepath.Join(baseDir, name)
-		paths = append(paths, resolveOutputPath(candidate))
-	}
-
-	return paths, nil
-}
-
-func resolveSingleOutputArg(cmd *cobra.Command, outputArg string) (string, error) {
-	info, statErr := os.Stat(outputArg)
-	if statErr == nil && info.IsDir() {
-		return "", nil
-	}
-
-	if statErr == nil && !info.IsDir() {
-		if strings.ToLower(filepath.Ext(outputArg)) != ".pdf" {
-			return "", fmt.Errorf("the file '%s' is invalid, must be '.pdf'", outputArg)
-		}
-		dir := filepath.Dir(outputArg)
-		if dir == "" {
-			dir = "."
-		}
-		if err := ensureOutputDirectory(cmd, dir); err != nil {
-			return "", err
-		}
-		return resolveOutputPath(outputArg), nil
-	}
-
-	if statErr != nil && !os.IsNotExist(statErr) {
-		return "", fmt.Errorf("unable to access output path '%s': %w", outputArg, statErr)
-	}
-
-	if strings.ToLower(filepath.Ext(outputArg)) == ".pdf" {
-		dir := filepath.Dir(outputArg)
-		if dir == "" {
-			dir = "."
-		}
-		if err := ensureOutputDirectory(cmd, dir); err != nil {
-			return "", err
-		}
-		return resolveOutputPath(outputArg), nil
-	}
-
-	return "", nil
-}
-
-func resolveExplicitOutputFiles(cmd *cobra.Command, files []string) ([]string, error) {
-	paths := make([]string, 0, len(files))
-	for _, out := range files {
+	if len(jobs) == 1 && splitOutput != "" {
+		out := splitOutput
 		if strings.ToLower(filepath.Ext(out)) != ".pdf" {
 			return nil, fmt.Errorf("the file '%s' is invalid, must be '.pdf'", out)
+		}
+
+		if !filepath.IsAbs(out) {
+			out = filepath.Join(baseDir, out)
 		}
 
 		dir := filepath.Dir(out)
@@ -325,7 +273,28 @@ func resolveExplicitOutputFiles(cmd *cobra.Command, files []string) ([]string, e
 			return nil, err
 		}
 
-		paths = append(paths, resolveOutputPath(out))
+		return []string{resolveOutputPath(out)}, nil
+	}
+
+	prefix := "split"
+	if splitOutput != "" {
+		prefix = strings.TrimSpace(splitOutput)
+		if prefix == "" {
+			return nil, fmt.Errorf("output prefix cannot be empty")
+		}
+
+		if strings.ToLower(filepath.Ext(prefix)) == ".pdf" {
+			prefix = strings.TrimSuffix(prefix, filepath.Ext(prefix))
+		}
+
+		prefix = filepath.Base(prefix)
+	}
+
+	paths := make([]string, 0, len(jobs))
+	for _, job := range jobs {
+		name := fmt.Sprintf("%s_%s.pdf", prefix, job.Label)
+		candidate := filepath.Join(baseDir, name)
+		paths = append(paths, resolveOutputPath(candidate))
 	}
 
 	return paths, nil
@@ -428,10 +397,12 @@ func looksLikeSelector(s string) bool {
 func init() {
 	rootCmd.AddCommand(splitCmd)
 	splitCmd.Flags().BoolVarP(&splitExtract, "extract", "e", false, "Extract selected page segments into separate files")
-	splitCmd.Flags().BoolVarP(&splitOdd, "odd", "o", false, "Keep only odd pages in selected segments (extract mode)")
+	splitCmd.Flags().BoolVar(&splitOdd, "odd", false, "Keep only odd pages in selected segments (extract mode)")
 	splitCmd.Flags().BoolVarP(&splitEven, "even", "n", false, "Keep only even pages in selected segments (extract mode)")
 	splitCmd.Flags().BoolVarP(&splitVerbose, "verbose", "v", false, "Print per-output page details")
-	splitCmd.Flags().StringVar(&splitOutputDir, "output-dir", "", "Output directory (default: input PDF directory)")
+	splitCmd.Flags().StringVarP(&splitPage, "page", "p", "", "Page selector (boundary or extract selector)")
+	splitCmd.Flags().StringVarP(&splitOutput, "output", "o", "", "Output file name (single result) or prefix (multiple results)")
+	splitCmd.Flags().StringVarP(&splitDir, "dir", "d", "", "Output directory (default: input PDF directory)")
 
 	// Here you will define your flags and configuration settings.
 

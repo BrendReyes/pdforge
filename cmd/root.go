@@ -1,6 +1,5 @@
 /*
 Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -33,7 +32,9 @@ const rootHelpTemplate = `{{pdArt}}
 {{pdTitle "USAGE"}}
 	{{.UseLine}}
 
-{{if .HasAvailableSubCommands}}{{pdTitle "COMMANDS"}}
+{{if .Long}}{{pdTitle "DESCRIPTION"}}
+{{.Long}}
+{{end}}{{if .HasAvailableSubCommands}}{{pdTitle "COMMANDS"}}
 {{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}{{if not .Hidden}}  {{pdAccent (rpad .Name .NamePadding)}} {{.Short}}
 {{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 {{pdTitle "FLAGS"}}
@@ -58,14 +59,13 @@ All processing happens on your machine, with no uploads and no cloud dependency.
 
 Command set:
   - merge: combine multiple PDF files
-  - split: extract selected pages from a PDF
-  - rmpage: remove pages from a PDF
-  - compress: reduce PDF file size
-  - convert: turn image files into a PDF`,
+	- split: split a PDF by boundary or extract selected ranges
+	- rmpage: remove one or more pages from a PDF
+	- compress: compress a PDF to reduce file size`,
 	Example: `  pdforge merge a.pdf b.pdf
-  pdforge split report.pdf
-  pdforge compress large.pdf
-  pdforge convert page1.jpg page2.png`,
+	pdforge split report.pdf --page 1-3
+	pdforge rmpage report.pdf 8
+	pdforge compress large.pdf`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -122,15 +122,4 @@ func init() {
 	rootCmd.SilenceUsage = true
 	rootCmd.SetHelpTemplate(rootHelpTemplate)
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pdforge.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
-
-
