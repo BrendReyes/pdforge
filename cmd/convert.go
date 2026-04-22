@@ -1,6 +1,5 @@
 /*
 Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -18,10 +17,13 @@ import (
 
 // convertCmd represents the convert command
 var convertCmd = &cobra.Command{
-	Use:   "convert <image1> [image2 ...]",
-	Short: "Convert image files into a single PDF",
-	Long: "The convert command creates a PDF from one or more image files. Supported types: JPG, PNG, WEBP, TIFF",
-	Example: "pdforge convert scan1.jpg scan2.jpg -o converted.pdf",
+	Use:    "convert <image1> [image2 ...]",
+	Short:  "Convert image files into a single PDF",
+	Hidden: true,
+	Long: `The convert command creates a PDF from one or more image files.
+Use it to package scanned pages or image sets into one document.`,
+	Example: `  pdforge convert scan1.jpg scan2.jpg
+	pdforge convert page.png diagram.tiff -o converted.pdf`,
 	RunE: runConvert,
 	Args: cobra.MinimumNArgs(1),
 }
@@ -46,8 +48,7 @@ func runConvert(cmd *cobra.Command, args []string) error {
 	}
 
 	// --dir validator
-	if err := ensureOutputDirectory(cmd, dir) 
-	err != nil {
+	if err := ensureOutputDirectory(cmd, dir); err != nil {
 		return err
 	}
 
@@ -58,7 +59,7 @@ func runConvert(cmd *cobra.Command, args []string) error {
 		if ftype != ".png" && ftype != ".jpg" && ftype != ".webp" && ftype != ".tiff" {
 			return fmt.Errorf("the file '%s' is invalid, must be supported image file (JPG, PNG, WEBP, TIFF)", filepath.Base(item))
 		}
-		
+
 		_, err := os.Stat(item)
 		if err != nil {
 			return fmt.Errorf("invalid image '%s': \n%v", filepath.Base(item), err)
