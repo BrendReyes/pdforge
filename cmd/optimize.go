@@ -33,6 +33,19 @@ resolution before optimizing.`,
 	RunE: runOptimize,
 }
 
+func init() {
+	
+	currentDir, err := os.Getwd()
+	if err != nil {
+		currentDir = "."
+	}
+
+	rootCmd.AddCommand(optimizeCmd)
+	optimizeCmd.SetHelpTemplate(subHelpTemplate)
+	optimizeCmd.Flags().StringP("output", "o", "", "Location with filename")
+	optimizeCmd.Flags().StringP("dir", "d", currentDir, "directory")
+}
+
 func runOptimize(cmd *cobra.Command, args []string) error {
 
 	inFile := args[0]
@@ -95,16 +108,5 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func init() {
-	
-	currentDir, err := os.Getwd()
-	if err != nil {
-		currentDir = "."
-	}
 
-	rootCmd.AddCommand(optimizeCmd)
-	optimizeCmd.SetHelpTemplate(subHelpTemplate)
-	optimizeCmd.Flags().StringP("output", "o", "", "Location with filename")
-	optimizeCmd.Flags().StringP("dir", "d", currentDir, "directory")
-}
 
