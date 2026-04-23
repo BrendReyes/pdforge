@@ -75,7 +75,7 @@ func runConvert(cmd *cobra.Command, args []string) error {
 
 	// auto naming the file if no name is passed
 	if output == "" {
-		output = "convert_" + time.Now().Format("20060102_150405") + ".pdf"
+		output = "converted_" + time.Now().Format("20060102_150405") + ".pdf"
 	}
 
 	fileType := strings.ToLower(filepath.Ext(output))
