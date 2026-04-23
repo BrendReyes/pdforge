@@ -83,13 +83,9 @@ var rootCmd = &cobra.Command{
 	Short: "pdforge: local, privacy-first PDF toolkit",
 	Long: `pdforge is a local, open-source CLI for common PDF workflows.
 All processing happens on your machine, with no uploads and no cloud dependency.
-
-Command set:
-  	- merge: combine multiple PDF files
-	- split: split a PDF by boundary or extract selected ranges
-	- rmpage: remove one or more pages from a PDF
-	- optimize: optimize a PDF to reduce file size`,
-	Example: `	pdforge merge a.pdf b.pdf
+`,
+	Example: `	pdforge convert image.jpg
+	pdforge merge a.pdf b.pdf
 	pdforge split report.pdf --page 1-3
 	pdforge rmpage report.pdf 8
 	pdforge optimize large.pdf`,

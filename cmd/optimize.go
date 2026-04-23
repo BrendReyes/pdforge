@@ -27,8 +27,8 @@ Only accepts 1 file at a time.
 Note: optimization focuses on PDF structure and text streams.
 For best results on image-heavy PDFs, consider reducing image
 resolution before optimizing.`,
-	Example: `  pdforge optimize large-report.pdf
-	pdforge optimize archive.pdf -o archive_optimized.pdf`,
+	Example: `pdforge optimize large-report.pdf
+pdforge optimize archive.pdf -o archive_optimized.pdf`,
 	Args: cobra.ExactArgs(1),
 	RunE: runOptimize,
 }

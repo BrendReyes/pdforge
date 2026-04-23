@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/schollz/progressbar/v3"
@@ -16,16 +17,13 @@ import (
 
 // rmpageCmd represents the rmpage command
 var rmpageCmd = &cobra.Command{
-	Use:   "rmpage [flags] <input_path> [page_selector]",
+	Use:   "rmpage <input_path> [page_selector]",
 	Short: "Remove one or more pages from a PDF",
 	Long: `Remove pages from a PDF file. Accepts:
 	  - Single page: pdforge rmpage input.pdf 8
 	  - Flag form: pdforge rmpage input.pdf --page 8
 	  - Range: pdforge rmpage input.pdf 1-3
-	  - Combination: pdforge rmpage input.pdf 1,6-11,17
-
-If --output is omitted, pdforge writes remove.pdf in the selected directory.
-If the output file exists, pdforge auto-increments the filename (example: remove (1).pdf).`,
+	  - Combination: pdforge rmpage input.pdf 1,6-11,17`,
 	Example: `  pdforge rmpage input.pdf 8
   pdforge rmpage input.pdf --page 1-3
   pdforge rmpage input.pdf 1-3 -o cleaned.pdf
@@ -86,7 +84,7 @@ If the output file exists, pdforge auto-increments the filename (example: remove
 
 		output := outputFlag
 		if output == "" {
-			output = "remove.pdf"
+			output = "removed_" + time.Now().Format("20060102_150405") + ".pdf"
 		}
 
 		if dirFlag == "" {

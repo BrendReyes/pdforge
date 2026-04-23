@@ -17,7 +17,7 @@ import (
 
 // mergeCmd represents the merge command
 var mergeCmd = &cobra.Command{
-	Use:     "merge <file1.pdf> <file2.pdf> *use quotation for filename or directory with spaces or special char* [more.pdf...]",
+	Use:     "merge <file1.pdf> <file2.pdf> [more.pdf...]",
 	Short:   "Merge two or more PDF files into one document",
 	Long:    "The merge command combines multiple PDF files into a single output PDF. The input order is preserved in the merged document.",
 	Example: "pdforge merge invoice-jan.pdf invoice-feb.pdf\npdforge merge file1.pdf file2.pdf -o result.pdf",
