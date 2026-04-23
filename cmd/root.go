@@ -61,11 +61,13 @@ Command set:
   - merge: combine multiple PDF files
 	- split: split a PDF by boundary or extract selected ranges
 	- rmpage: remove one or more pages from a PDF
-	- compress: compress a PDF to reduce file size`,
+	- compress: compress a PDF to reduce file size
+	- serve: run a local web preview for pdforge`,
 	Example: `  pdforge merge a.pdf b.pdf
 	pdforge split report.pdf --page 1-3
 	pdforge rmpage report.pdf 8
-	pdforge compress large.pdf`,
+	pdforge compress large.pdf
+	pdforge serve --port 8080`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },

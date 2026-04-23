@@ -90,3 +90,16 @@ Notes:
 - [ ] README includes install + usage examples for all commands
 - [ ] Privacy statement included in README
 - [ ] Initial GitHub release prepared
+
+## 7) Web Implementation
+
+- [x] `pdforge serve` launches a shadcn-inspired browser dashboard
+- [x] Merge, split, remove pages, and compress workflows are wired to local pdfcpu actions
+- [x] Web forms expose the core CLI flag fields for each workflow
+- [x] Download links are generated for completed web jobs
+- [x] Serve binds to loopback only (`127.0.0.1`) by default
+- [x] CSRF tokens and security headers are enabled for browser requests
+- [x] Multipart uploads are size-limited and temp files are cleaned up
+- [x] coss ui React frontend scaffold created under `web/`
+- [x] `pdforge serve` prefers `web/dist` when a frontend build exists
+- [x] `pdforge serve` auto-opens the browser by default with a `--no-open` escape hatch

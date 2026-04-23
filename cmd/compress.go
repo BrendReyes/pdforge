@@ -6,6 +6,10 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"image/png"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +17,7 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
+	xdraw "golang.org/x/image/draw"
 )
 
 // compressCmd represents the compress command
@@ -31,6 +36,19 @@ var compressOutput string
 var compressImageMode string
 var compressImageMaxDimension int
 var compressImageJPEGQuality int
+
+type imageStats struct {
+	count      int
+	totalBytes int64
+	maxWidth   int
+	maxHeight  int
+}
+
+type imageModeProfile struct {
+	maxDimension int
+	jpegQuality  int
+	warning      string
+}
 
 const (
 	compressImageModeOff          = "off"
@@ -130,7 +148,7 @@ func runCompress(cmd *cobra.Command, args []string) error {
 	output = resolveOutputPath(output)
 
 	bar = progressbar.Default(-1, "Compressing")
-	if err := api.OptimizeFile(input, output, nil); err != nil {
+	if err := api.OptimizeFile(workingInput, output, nil); err != nil {
 		return err
 	}
 	_ = bar.Finish()
@@ -185,6 +203,12 @@ func resolveImageModeProfile(mode string) imageModeProfile {
 			maxDimension: 1400,
 			jpegQuality:  70,
 			warning:      "Warning: --image-mode aggressive may noticeably reduce visual quality and can increase file size for some PDFs.",
+		}
+	case compressImageModeReadable:
+		return imageModeProfile{
+			maxDimension: 2600,
+			jpegQuality:  93,
+			warning:      "Notice: --image-mode readable prioritizes quality over size reduction.",
 		}
 	case compressImageModeBalanced:
 		fallthrough
@@ -302,7 +326,7 @@ func resizeImage(src image.Image, maxDimension int) image.Image {
 	}
 
 	dst := image.NewRGBA(image.Rect(0, 0, newW, newH))
-	draw.CatmullRom.Scale(dst, dst.Bounds(), src, b, draw.Over, nil)
+	xdraw.CatmullRom.Scale(dst, dst.Bounds(), src, b, xdraw.Over, nil)
 	return dst
 }
 
@@ -361,7 +385,8 @@ func init() {
 		}
 
 		if compressImageMode != compressImageModeOff {
-			fmt.Fprintln(cmd.OutOrStdout(), "Image mode flags are currently inactive; proceeding with standard PDF optimization only.")
+			profile := resolveImageModeProfile(compressImageMode)
+			fmt.Fprintln(cmd.OutOrStdout(), profile.warning)
 		}
 
 		return nil
