@@ -131,12 +131,3 @@ func promptYesNo(cmd *cobra.Command, message string) (bool, error) {
 	return response == "y" || response == "yes", nil
 }
 
-func argsWithHelp(argValidator cobra.PositionalArgs) cobra.PositionalArgs {
-    return func(cmd *cobra.Command, args []string) error {
-        if err := argValidator(cmd, args); err != nil {
-            cmd.Help()
-            os.Exit(0)
-        }
-        return nil
-    }
-}

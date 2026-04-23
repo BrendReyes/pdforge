@@ -27,7 +27,7 @@ If --output is omitted, split uses the default naming pattern for the selected m
   pdforge split input.pdf --page 8
   pdforge split -e input.pdf 6,8-10,11
   pdforge split input.pdf 8 -o section -d ./out`,
-	Args: argsWithHelp(cobra.RangeArgs(1, 2)),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: runSplit,
 }
 
@@ -396,6 +396,7 @@ func looksLikeSelector(s string) bool {
 
 func init() {
 	rootCmd.AddCommand(splitCmd)
+	splitCmd.SetHelpTemplate(subHelpTemplate)
 	splitCmd.Flags().BoolVarP(&splitExtract, "extract", "e", false, "Extract selected page segments into separate files")
 	splitCmd.Flags().BoolVar(&splitOdd, "odd", false, "Keep only odd pages in selected segments (extract mode)")
 	splitCmd.Flags().BoolVarP(&splitEven, "even", "n", false, "Keep only even pages in selected segments (extract mode)")

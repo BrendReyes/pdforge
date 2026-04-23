@@ -27,10 +27,10 @@ var rmpageCmd = &cobra.Command{
 If --output is omitted, pdforge writes remove.pdf in the selected directory.
 If the output file exists, pdforge auto-increments the filename (example: remove (1).pdf).`,
 	Example: `  pdforge rmpage input.pdf 8
-	  pdforge rmpage input.pdf --page 1-3
+  pdforge rmpage input.pdf --page 1-3
   pdforge rmpage input.pdf 1-3 -o cleaned.pdf
   pdforge rmpage input.pdf 1,6-11,17 -d ./out`,
-	Args: argsWithHelp(cobra.RangeArgs(1, 2)),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		input := args[0]
 
@@ -239,6 +239,7 @@ func parsePageSpecification(spec string) ([]int, error) {
 
 func init() {
 	rootCmd.AddCommand(rmpageCmd)
+	rmpageCmd.SetHelpTemplate(subHelpTemplate)
 	rmpageCmd.Flags().StringVarP(&rmpagePage, "page", "p", "", "Page selector (example: 3, 1-4, 2,6-9)")
 	rmpageCmd.Flags().StringVarP(&rmpageOutput, "output", "o", "", "Output PDF file path")
 	rmpageCmd.Flags().StringVarP(&rmpageDir, "dir", "d", "", "Output directory (default: input PDF directory)")

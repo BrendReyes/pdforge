@@ -48,6 +48,26 @@ const rootHelpTemplate = `{{pdArt}}
 {{pdMuted "Run pdforge [command] --help for detailed command usage."}}
 `
 
+const subHelpTemplate = `{{pdTitle "USAGE"}}
+	{{.UseLine}}
+
+{{if .Long}}{{pdTitle "DESCRIPTION"}}
+{{.Long}}
+{{end}}{{if .HasAvailableSubCommands}}{{pdTitle "COMMANDS"}}
+{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}{{if not .Hidden}}  {{pdAccent (rpad .Name .NamePadding)}} {{.Short}}
+{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+{{pdTitle "FLAGS"}}
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
+{{pdTitle "GLOBAL FLAGS"}}
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .Example}}
+
+{{pdTitle "EXAMPLES"}}
+{{.Example}}{{end}}
+
+{{pdMuted "Run pdforge [command] --help for detailed command usage."}}
+`
+
+
 var enableANSI = shouldUseColor()
 
 // rootCmd represents the base command when called without any subcommands
@@ -58,14 +78,14 @@ var rootCmd = &cobra.Command{
 All processing happens on your machine, with no uploads and no cloud dependency.
 
 Command set:
-  - merge: combine multiple PDF files
+  	- merge: combine multiple PDF files
 	- split: split a PDF by boundary or extract selected ranges
 	- rmpage: remove one or more pages from a PDF
-	- compress: compress a PDF to reduce file size`,
-	Example: `  pdforge merge a.pdf b.pdf
+	- optimize: optimize a PDF to reduce file size`,
+	Example: `	pdforge merge a.pdf b.pdf
 	pdforge split report.pdf --page 1-3
 	pdforge rmpage report.pdf 8
-	pdforge compress large.pdf`,
+	pdforge optimize large.pdf`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -121,5 +141,4 @@ func init() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.SilenceUsage = true
 	rootCmd.SetHelpTemplate(rootHelpTemplate)
-
 }
