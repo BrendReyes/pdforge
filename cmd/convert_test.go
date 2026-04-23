@@ -52,6 +52,7 @@ func TestRunConvert(t *testing.T) {
 				"testdata/images/sample.jpg",
 				"testdata/images/sample.png",
 				"testdata/images/sample.webp",
+				"testdata/images/sample.tiff",
 			},
 			expectErr: false,
 		},
@@ -103,6 +104,24 @@ func TestRunConvert(t *testing.T) {
 				"testdata/images/sample.jpg",
 			},
 			output:    "result.PDF",
+			expectErr: false,
+		},
+		{
+			name: "output with directory but without name",
+			args: []string{
+				"testdata/pdfs/sample.jpg",
+				"testdata/pdfs/sample.png",
+			},
+			output:    "testdata/output",
+			expectErr: true,
+		},
+		{
+			name: "output with directory with name",
+			args: []string{
+				"testdata/images/sample.jpg",
+				"testdata/images/sample.png",
+			},
+			output:    "testdata/output/convert_success.pdf",
 			expectErr: false,
 		},
 
@@ -239,7 +258,7 @@ func TestRunConvert(t *testing.T) {
 				// clean currentDir
 				entries, _ := os.ReadDir(currentDir)
 				for _, entry := range entries {
-					if strings.HasPrefix(entry.Name(), "converted_") || //placed "2" here so that it doesnt count this file to be cleaned, it works for now.... too lazy :)
+					if strings.HasPrefix(entry.Name(), "converted_") ||
 						entry.Name() == tt.output {
 						os.Remove(filepath.Join(currentDir, entry.Name()))
 					}

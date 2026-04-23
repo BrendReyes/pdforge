@@ -177,6 +177,24 @@ func TestRunOptimize(t *testing.T) {
 			dir:       "testdata/pdfs/sample1.pdf",
 			expectErr: true,
 		},
+
+		// -- output flag with directory --
+		{
+			name: "output with directory but without name",
+			args: []string{
+				"testdata/pdfs/sample1.pdf",
+			},
+			output:    "testdata/output",
+			expectErr: true,
+		},
+		{
+			name: "output with directory with name",
+			args: []string{
+				"testdata/pdfs/sample1.pdf",
+			},
+			output:    "testdata/output/optimize_success.pdf",
+			expectErr: false,
+		},
 	}
 
 	for _, tt := range tests {

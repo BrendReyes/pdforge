@@ -138,6 +138,24 @@ func TestRunMerge(t *testing.T) {
 			expectErr: true,
 		},
 		{
+			name: "output with directory but without name",
+			args: []string{
+				"testdata/pdfs/sample1.pdf",
+				"testdata/pdfs/sample2.pdf",
+			},
+			output:    "cmd/testdata/output",
+			expectErr: true,
+		},
+		{
+			name: "output with directory with name",
+			args: []string{
+				"testdata/pdfs/sample1.pdf",
+				"testdata/pdfs/sample2.pdf",
+			},
+			output:    "testdata/output/merged_success.pdf",
+			expectErr: false,
+		},
+		{
 			name: "empty string in args",
 			args: []string{
 				"testdata/pdfs/sample1.pdf",

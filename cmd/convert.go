@@ -83,7 +83,15 @@ func runConvert(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", output)
 	}
 
-	output = filepath.Join(dir, output)
+	// Route output path correctly
+	if filepath.IsAbs(output) || filepath.Dir(output) != "." {
+		outputDir := filepath.Dir(output)
+		if err := ensureOutputDirectory(cmd, outputDir); err != nil {
+			return err
+		}
+	} else {
+		output = filepath.Join(dir, output)
+	}
 	output = resolveOutputPath(output) // Duplicate overwrite function
 
 	bar = progressbar.Default(-1, "Converting")
