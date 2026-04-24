@@ -61,12 +61,12 @@ Command set:
   - merge: combine multiple PDF files
 	- split: split a PDF by boundary or extract selected ranges
 	- rmpage: remove one or more pages from a PDF
-	- compress: compress a PDF to reduce file size
+	- optimize: optimize a PDF to reduce file size
 	- serve: run a local web preview for pdforge`,
 	Example: `  pdforge merge a.pdf b.pdf
 	pdforge split report.pdf --page 1-3
 	pdforge rmpage report.pdf 8
-	pdforge compress large.pdf
+	pdforge optimize large.pdf
 	pdforge serve --port 8080`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
@@ -125,3 +125,19 @@ func init() {
 	rootCmd.SetHelpTemplate(rootHelpTemplate)
 
 }
+
+const subHelpTemplate = `{{pdTitle "USAGE"}}
+	{{.UseLine}}
+
+{{if .Long}}{{pdTitle "DESCRIPTION"}}
+{{.Long}}
+{{end}}{{if .HasAvailableLocalFlags}}
+{{pdTitle "FLAGS"}}
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
+
+{{pdTitle "GLOBAL FLAGS"}}
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .Example}}
+
+{{pdTitle "EXAMPLES"}}
+{{.Example}}{{end}}
+`

@@ -12,5 +12,10 @@ export default defineConfig({
   server: {
     host: '127.0.0.1',
     port: 4173,
+    proxy: {
+      '/api': 'http://127.0.0.1:8080',
+      '/download': 'http://127.0.0.1:8080',
+      '/healthz': 'http://127.0.0.1:8080',
+    },
   },
 });

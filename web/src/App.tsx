@@ -26,7 +26,7 @@ import { fetchCsrfToken } from '@/lib/csrf';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type WorkflowKey = 'merge' | 'split' | 'remove' | 'compress';
+type WorkflowKey = 'merge' | 'split' | 'remove' | 'optimize';
 
 type WorkflowItem = {
   key: WorkflowKey;
@@ -39,7 +39,7 @@ const workflows: WorkflowItem[] = [
   { key: 'merge', label: 'Merge', icon: Layers3, description: 'Combine multiple PDFs into one file.' },
   { key: 'split', label: 'Split', icon: Scissors, description: 'Extract ranges, odd/even pages, or sections.' },
   { key: 'remove', label: 'Remove Pages', icon: Trash2, description: 'Drop selected pages from a PDF.' },
-  { key: 'compress', label: 'Compress', icon: Minimize2, description: 'Optimize PDFs with image controls.' },
+  { key: 'optimize', label: 'Optimize', icon: Minimize2, description: 'Optimize PDFs with image controls.' },
 ];
 
 type ApiResultItem = {
@@ -282,7 +282,7 @@ function AppInner() {
             {activeWorkflow === 'merge' && <MergePanel csrfToken={csrfToken} />}
             {activeWorkflow === 'split' && <SplitPanel csrfToken={csrfToken} />}
             {activeWorkflow === 'remove' && <RemovePanel csrfToken={csrfToken} />}
-            {activeWorkflow === 'compress' && <CompressPanel csrfToken={csrfToken} />}
+            {activeWorkflow === 'optimize' && <OptimizePanel csrfToken={csrfToken} />}
           </section>
         </div>
       </div>
@@ -475,8 +475,8 @@ function RemovePanel({ csrfToken }: { csrfToken: string }) {
   );
 }
 
-function CompressPanel({ csrfToken }: { csrfToken: string }) {
-  const { loading, result, handleSubmit } = useFormSubmit('/api/compress', csrfToken);
+function OptimizePanel({ csrfToken }: { csrfToken: string }) {
+  const { loading, result, handleSubmit } = useFormSubmit('/api/optimize', csrfToken);
 
   return (
     <form className="grid gap-4 xl:grid-cols-[1fr_340px]" onSubmit={handleSubmit}>
@@ -486,24 +486,24 @@ function CompressPanel({ csrfToken }: { csrfToken: string }) {
         <legend className="px-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Input</legend>
         <div className="grid gap-4">
           <Field>
-            <Label htmlFor="compress-file">PDF file</Label>
-            <FileDropzone id="compress-file" name="file" accept=".pdf" required />
+            <Label htmlFor="optimize-file">PDF file</Label>
+            <FileDropzone id="optimize-file" name="file" accept=".pdf" required />
           </Field>
 
           {result && <ResultBanner message={result.message} />}
 
           <Button type="submit" loading={loading}>
             <Minimize2 className="h-4 w-4" />
-            Run compression
+            Run optimization
           </Button>
         </div>
       </Fieldset>
 
       <div className="grid gap-4 self-start">
-        <AdvancedFlagsCard title="Flags" subtitle="Advanced compression settings">
+        <AdvancedFlagsCard title="Flags" subtitle="Advanced optimization settings">
           <Field>
-            <Label htmlFor="compress-mode">Image mode (--image-mode)</Label>
-            <Select id="compress-mode" name="image_mode" defaultValue="off">
+            <Label htmlFor="optimize-mode">Image mode (--image-mode)</Label>
+            <Select id="optimize-mode" name="image_mode" defaultValue="off">
               <option value="off">off</option>
               <option value="readable">readable</option>
               <option value="balanced">balanced</option>
@@ -512,15 +512,15 @@ function CompressPanel({ csrfToken }: { csrfToken: string }) {
             </Select>
           </Field>
           <Field>
-            <Label htmlFor="compress-dimension">Max dimension (--image-max-dimension)</Label>
-            <Input id="compress-dimension" type="number" min={0} name="image_max_dimension" placeholder="0 = auto" />
+            <Label htmlFor="optimize-dimension">Max dimension (--image-max-dimension)</Label>
+            <Input id="optimize-dimension" type="number" min={0} name="image_max_dimension" placeholder="0 = auto" />
           </Field>
           <Field>
-            <Label htmlFor="compress-quality">JPEG quality (--image-jpeg-quality)</Label>
-            <Input id="compress-quality" type="number" min={0} max={100} name="image_jpeg_quality" placeholder="0 = auto" />
+            <Label htmlFor="optimize-quality">JPEG quality (--image-jpeg-quality)</Label>
+            <Input id="optimize-quality" type="number" min={0} max={100} name="image_jpeg_quality" placeholder="0 = auto" />
           </Field>
         </AdvancedFlagsCard>
-        <OutputCard workflow="compress" outputName="output" outputId="compress-output" dirName="dir" dirId="compress-dir" />
+        <OutputCard workflow="optimize" outputName="output" outputId="optimize-output" dirName="dir" dirId="optimize-dir" />
       </div>
     </form>
   );

@@ -107,12 +107,51 @@ type webRemoveForm struct {
 	Dir    string
 }
 
-type webCompressForm struct {
+type webOptimizeForm struct {
 	Output           string
 	Dir              string
 	ImageMode        string
 	ImageMaxDim      int
 	ImageJPEGQuality int
+}
+
+const (
+	optimizeImageModeOff          = "off"
+	optimizeImageModeReadable     = "readable"
+	optimizeImageModeBalanced     = "balanced"
+	optimizeImageModeAggressive   = "aggressive"
+	optimizeImageModeExperimental = "experimental"
+)
+
+type imageProfile struct {
+	maxDimension int
+	jpegQuality  int
+}
+
+func resolveImageModeProfile(mode string) imageProfile {
+	switch mode {
+	case optimizeImageModeReadable:
+		return imageProfile{maxDimension: 2400, jpegQuality: 85}
+	case optimizeImageModeBalanced:
+		return imageProfile{maxDimension: 1600, jpegQuality: 72}
+	case optimizeImageModeAggressive:
+		return imageProfile{maxDimension: 1200, jpegQuality: 55}
+	default:
+		return imageProfile{maxDimension: 1600, jpegQuality: 72}
+	}
+}
+
+func defaultOptimizedOutput(inputPath string) string {
+	base := strings.TrimSuffix(filepath.Base(inputPath), filepath.Ext(inputPath))
+	return base + "_optimized.pdf"
+}
+
+// preprocessPDFImages is a placeholder for image-level PDF optimization.
+// Full image extraction and re-encoding is not yet implemented in optimize;
+// the function returns the original input unchanged so the caller can
+// still apply api.OptimizeFile for stream-level compression.
+func preprocessPDFImages(inputPath string, maxDim, jpegQuality int) (string, int64, func(), error) {
+	return inputPath, 0, nil, nil
 }
 
 func newWebServer(port int) (*webServer, error) {
@@ -159,7 +198,7 @@ func (s *webServer) run(cmdOut io.Writer, autoOpen bool) error {
 	mux.HandleFunc("/api/merge", s.handleMerge)
 	mux.HandleFunc("/api/split", s.handleSplit)
 	mux.HandleFunc("/api/remove", s.handleRemove)
-	mux.HandleFunc("/api/compress", s.handleCompress)
+	mux.HandleFunc("/api/optimize", s.handleOptimize)
 
 	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(s.port))
 
@@ -338,13 +377,13 @@ func (s *webServer) handleRemove(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *webServer) handleCompress(w http.ResponseWriter, r *http.Request) {
+func (s *webServer) handleOptimize(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	result, alert, err := s.processCompress(w, r)
+	result, alert, err := s.processOptimize(w, r)
 	if wantsJSONResponse(r) {
 		if err != nil {
 			s.writeJSON(w, http.StatusBadRequest, webAPIResponse{OK: false, Alert: alert, Error: err.Error()})
@@ -678,7 +717,7 @@ func (s *webServer) processRemove(w http.ResponseWriter, r *http.Request) (*webR
 	return result, "Page removal completed successfully.", nil
 }
 
-func (s *webServer) processCompress(w http.ResponseWriter, r *http.Request) (*webResult, string, error) {
+func (s *webServer) processOptimize(w http.ResponseWriter, r *http.Request) (*webResult, string, error) {
 	formCleanup, err := s.prepareMultipartForm(w, r)
 	if err != nil {
 		return nil, "Unable to parse uploaded file.", err
@@ -691,17 +730,17 @@ func (s *webServer) processCompress(w http.ResponseWriter, r *http.Request) (*we
 
 	fileHeader := firstFile(r, "file")
 	if fileHeader == nil {
-		return nil, "Compression needs one PDF file.", fmt.Errorf("missing uploaded PDF file")
+		return nil, "Optimization needs one PDF file.", fmt.Errorf("missing uploaded PDF file")
 	}
 
-	jobDir := filepath.Join(s.tempRoot, "compress-"+randomToken())
+	jobDir := filepath.Join(s.tempRoot, "optimize-"+randomToken())
 	inputPath, err := saveUploadedPDF(filepath.Join(jobDir, "input"), fileHeader)
 	if err != nil {
-		return nil, "Invalid compression input.", err
+		return nil, "Invalid optimization input.", err
 	}
 
 	if strings.ToLower(filepath.Ext(inputPath)) != ".pdf" {
-		return nil, "Compression requires a PDF file.", fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(inputPath))
+		return nil, "Optimization requires a PDF file.", fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(inputPath))
 	}
 
 	if err := api.ValidateFile(inputPath, nil); err != nil {
@@ -710,7 +749,7 @@ func (s *webServer) processCompress(w http.ResponseWriter, r *http.Request) (*we
 
 	outputName := strings.TrimSpace(formValue(r, "output"))
 	if outputName == "" {
-		outputName = defaultCompressedOutput(inputPath)
+		outputName = defaultOptimizedOutput(inputPath)
 		outputName = filepath.Base(outputName)
 	}
 	if strings.ToLower(filepath.Ext(outputName)) != ".pdf" {
@@ -725,7 +764,7 @@ func (s *webServer) processCompress(w http.ResponseWriter, r *http.Request) (*we
 		return nil, "Unable to prepare output directory.", err
 	}
 
-	mode, err := normalizeWebCompressImageMode(formValue(r, "image_mode"))
+	mode, err := normalizeWebOptimizeImageMode(formValue(r, "image_mode"))
 	if err != nil {
 		return nil, "Invalid image mode.", err
 	}
@@ -735,7 +774,7 @@ func (s *webServer) processCompress(w http.ResponseWriter, r *http.Request) (*we
 
 	processedInput := inputPath
 	var cleanup func()
-	if mode != compressImageModeOff {
+	if mode != optimizeImageModeOff {
 		profile := resolveImageModeProfile(mode)
 		if maxDim <= 0 {
 			maxDim = profile.maxDimension
@@ -756,14 +795,14 @@ func (s *webServer) processCompress(w http.ResponseWriter, r *http.Request) (*we
 	outputPath := filepath.Join(outputDir, outputName)
 	outputPath = resolveOutputPath(outputPath)
 	if err := api.OptimizeFile(processedInput, outputPath, nil); err != nil {
-		return nil, "Compression failed.", err
+		return nil, "Optimization failed.", err
 	}
 
-	result, err := s.registerResult("Compress", "Reduced the PDF file size and generated a downloadable output.", []string{outputPath})
+	result, err := s.registerResult("Optimize", "Optimized the PDF and generated a downloadable output.", []string{outputPath})
 	if err != nil {
-		return nil, "Compression completed, but result registration failed.", err
+		return nil, "Optimization completed, but result registration failed.", err
 	}
-	return result, "Compression completed successfully.", nil
+	return result, "Optimization completed successfully.", nil
 }
 
 func (s *webServer) registerResult(action, summary string, paths []string) (*webResult, error) {
@@ -1145,18 +1184,18 @@ func alertKind(err error) string {
 	return "success"
 }
 
-func normalizeWebCompressImageMode(raw string) (string, error) {
+func normalizeWebOptimizeImageMode(raw string) (string, error) {
 	mode := strings.ToLower(strings.TrimSpace(raw))
-	if mode == "" || mode == compressImageModeOff {
-		return compressImageModeOff, nil
+	if mode == "" || mode == optimizeImageModeOff {
+		return optimizeImageModeOff, nil
 	}
 
-	if mode == compressImageModeExperimental {
-		mode = compressImageModeAggressive
+	if mode == optimizeImageModeExperimental {
+		mode = optimizeImageModeAggressive
 	}
 
 	switch mode {
-	case compressImageModeReadable, compressImageModeBalanced, compressImageModeAggressive:
+	case optimizeImageModeReadable, optimizeImageModeBalanced, optimizeImageModeAggressive:
 		return mode, nil
 	default:
 		return "", fmt.Errorf("invalid --image-mode '%s', expected: off|readable|balanced|aggressive", raw)
@@ -1354,7 +1393,7 @@ const pdforgeWebTemplate = `<!doctype html>
       <article class="card">
         <span class="label">Web MVP Platform</span>
         <h1>All pdforge workflows in one shadcn-style control panel.</h1>
-        <p>Merge, split, remove pages, and compress PDFs directly from the browser. Every flag exposed in the CLI is mapped into a form control below, and files are handled locally on this machine.</p>
+        <p>Merge, split, remove pages, and optimize PDFs directly from the browser. Every flag exposed in the CLI is mapped into a form control below, and files are handled locally on this machine.</p>
         <div class="cta">
           <a class="btn primary" href="#workflows">Open workflows</a>
           <a class="btn ghost" href="/healthz">Health check</a>
@@ -1365,7 +1404,7 @@ const pdforgeWebTemplate = `<!doctype html>
             <button type="button" class="active" data-tab="merge">Merge</button>
             <button type="button" data-tab="split">Split</button>
             <button type="button" data-tab="remove">Remove Pages</button>
-            <button type="button" data-tab="compress">Compress</button>
+            <button type="button" data-tab="optimize">Optimize</button>
           </div>
 
           <div class="tab-panel active" data-panel="merge">
@@ -1459,8 +1498,8 @@ const pdforgeWebTemplate = `<!doctype html>
             </form>
           </div>
 
-          <div class="tab-panel" data-panel="compress">
-            <form class="form-grid" action="/api/compress" method="post" enctype="multipart/form-data">
+          <div class="tab-panel" data-panel="optimize">
+            <form class="form-grid" action="/api/optimize" method="post" enctype="multipart/form-data">
 							<input type="hidden" name="csrf_token" value="{{.CSRFToken}}" />
               <div class="field-wide">
                 <label>PDF file</label>
@@ -1469,7 +1508,7 @@ const pdforgeWebTemplate = `<!doctype html>
               <div class="field-grid">
                 <div class="field">
                   <label>Output (-o / --output)</label>
-                  <input type="text" name="output" placeholder="archive_compressed.pdf" />
+                  <input type="text" name="output" placeholder="archive_optimized.pdf" />
                 </div>
                 <div class="field">
                   <label>Directory (-d / --dir)</label>
@@ -1495,7 +1534,7 @@ const pdforgeWebTemplate = `<!doctype html>
                 </div>
               </div>
               <div class="submit-row">
-                <button class="btn primary" type="submit">Run compression</button>
+                <button class="btn primary" type="submit">Run optimization</button>
                 <span class="hint">Image mode maps directly to the CLI flags. Experiment with readable, balanced, and aggressive modes.</span>
               </div>
             </form>
@@ -1510,7 +1549,7 @@ const pdforgeWebTemplate = `<!doctype html>
             <div class="flag-item"><span>merge</span><span>-o, -d</span></div>
             <div class="flag-item"><span>split</span><span>-e, --odd, --even, -v, -p, -o, -d</span></div>
             <div class="flag-item"><span>remove pages</span><span>-p, -o, -d</span></div>
-            <div class="flag-item"><span>compress</span><span>-o, --image-mode, --image-max-dimension, --image-jpeg-quality</span></div>
+            <div class="flag-item"><span>optimize</span><span>-o, --image-mode, --image-max-dimension, --image-jpeg-quality</span></div>
           </div>
         </section>
 

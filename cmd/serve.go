@@ -388,7 +388,7 @@ const heroUISampleHTML = `<!doctype html>
           </article>
           <article class="feature">
             <span class="tiny">03 Toolchain</span>
-            <h3>Compression</h3>
+            <h3>Optimization</h3>
             <p>Reduce size with standard optimization and image modes.</p>
           </article>
         </div>
@@ -407,7 +407,7 @@ const heroUISampleHTML = `<!doctype html>
         </div>
         <div class="stat">
           <h3>Web Adapter</h3>
-          <p>Route stubs are ready for merge, split, and compress APIs.</p>
+          <p>Route stubs are ready for merge, split, and optimize APIs.</p>
           <p style="margin-top:8px;"><span class="warn">Preview mode</span> keeps this UI static.</p>
         </div>
       </aside>
