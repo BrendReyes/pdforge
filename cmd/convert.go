@@ -35,7 +35,7 @@ func init() {
 
 	rootCmd.AddCommand(convertCmd)
 	convertCmd.SetHelpTemplate(subHelpTemplate)
-	convertCmd.Flags().StringP("output", "o", "", "Location with filename")
+	convertCmd.Flags().StringP("output", "o", "", "Location with filename or filename only")
 	convertCmd.Flags().StringP("dir", "d", currentDir, "directory")
 
 }

@@ -34,7 +34,7 @@ func init() {
 
 	rootCmd.AddCommand(mergeCmd)
 	mergeCmd.SetHelpTemplate(subHelpTemplate)
-	mergeCmd.Flags().StringP("output", "o", "", "Location with filename")
+	mergeCmd.Flags().StringP("output", "o", "", "Location with filename or filename only")
 	mergeCmd.Flags().StringP("dir", "d", currentDir, "directory")
 }
 

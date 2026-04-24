@@ -110,12 +110,20 @@ func runSplit(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "Created %d split file(s).\n", len(outputPaths))
-	if splitVerbose {
-		for i, job := range jobs {
-			fmt.Fprintf(cmd.OutOrStdout(), "- %s (pages: %s)\n", outputPaths[i], pagesDisplay(job.Pages))
+	fmt.Fprintln(cmd.OutOrStdout(), "===== Split Completed =====")
+	for i, path := range outputPaths {
+		fmt.Fprintf(cmd.OutOrStdout(), "-- File %d --\n", i+1)
+		report, err := GetFileInfo(path)
+		if err != nil {
+			return err
 		}
+		report.PrintReport(cmd.OutOrStdout())
+		if splitVerbose {
+			fmt.Fprintf(cmd.OutOrStdout(), "Pages: %s\n", pagesDisplay(jobs[i].Pages))
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "")
 	}
+
 
 	return nil
 }

@@ -42,7 +42,7 @@ func init() {
 
 	rootCmd.AddCommand(optimizeCmd)
 	optimizeCmd.SetHelpTemplate(subHelpTemplate)
-	optimizeCmd.Flags().StringP("output", "o", "", "Location with filename")
+	optimizeCmd.Flags().StringP("output", "o", "", "Location with filename or filename only")
 	optimizeCmd.Flags().StringP("dir", "d", currentDir, "directory")
 }
 

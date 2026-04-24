@@ -239,6 +239,6 @@ func init() {
 	rootCmd.AddCommand(rmpageCmd)
 	rmpageCmd.SetHelpTemplate(subHelpTemplate)
 	rmpageCmd.Flags().StringVarP(&rmpagePage, "page", "p", "", "Page selector (example: 3, 1-4, 2,6-9)")
-	rmpageCmd.Flags().StringVarP(&rmpageOutput, "output", "o", "", "Output PDF file path")
+	rmpageCmd.Flags().StringVarP(&rmpageOutput, "output", "o", "", "Location with filename or filename only")
 	rmpageCmd.Flags().StringVarP(&rmpageDir, "dir", "d", "", "Output directory (default: input PDF directory)")
 }
