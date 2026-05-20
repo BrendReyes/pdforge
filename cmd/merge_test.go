@@ -8,6 +8,9 @@ import (
 )
 
 func TestRunMerge(t *testing.T) {
+	// Ensure testdata/output exists before tests run
+	os.MkdirAll("testdata/output", 0o755)
+
 	tests := []struct {
 		name      string
 		args      []string
@@ -186,36 +189,40 @@ func TestRunMerge(t *testing.T) {
 			cmd := mergeCmd
 			cmd.ResetFlags()
 
-			currentDir, err := os.Getwd()
-			if err != nil {
-				t.Fatalf("failed to get working directory: %v", err)
-			}
-
-			// use tt.dir if provided, otherwise default to currentDir
-			dir := currentDir
-			if tt.dir != "" {
-				dir = tt.dir
-			}
+			// Mock stdin to auto-answer 'N' to the promptYesNo directory creation
+			cmd.SetIn(strings.NewReader("N\n"))
 
 			cmd.Flags().StringP("output", "o", "", "output")
-			cmd.Flags().StringP("dir", "d", dir, "directory")
+			cmd.Flags().StringP("dir", "d", "", "directory")
 
-			// set custom output if provided
+			if tt.dir != "" {
+				if err := cmd.Flags().Set("dir", tt.dir); err != nil {
+					t.Fatalf("failed to set dir flag: %v", err)
+				}
+			}
+
 			if tt.output != "" {
 				if err := cmd.Flags().Set("output", tt.output); err != nil {
 					t.Fatalf("failed to set output flag: %v", err)
 				}
 			}
 
-			err = runMerge(cmd, tt.args)
+			err := runMerge(cmd, tt.args)
 
 			// cleanup generated output files
 			t.Cleanup(func() {
-				entries, _ := os.ReadDir(currentDir)
+				outDir := tt.dir
+				if outDir == "" && len(tt.args) > 0 && tt.args[0] != "" {
+					outDir = filepath.Dir(tt.args[0])
+				}
+				if outDir == "" {
+					outDir = "."
+				}
+
+				entries, _ := os.ReadDir(outDir)
 				for _, entry := range entries {
-					if strings.HasPrefix(entry.Name(), "merged_") ||
-						entry.Name() == tt.output {
-						os.Remove(filepath.Join(currentDir, entry.Name()))
+					if strings.HasPrefix(entry.Name(), "merged_") || entry.Name() == tt.output {
+						os.Remove(filepath.Join(outDir, entry.Name()))
 					}
 				}
 			})

@@ -318,6 +318,9 @@ func TestRunSplit(t *testing.T) {
 			cmd := splitCmd
 			cmd.ResetFlags()
 
+			// Mock stdin to auto-answer 'N' to the promptYesNo directory creation
+			cmd.SetIn(strings.NewReader("N\n"))
+
 			currentDir, err := os.Getwd()
 			if err != nil {
 				t.Fatalf("failed to get working directory: %v", err)
@@ -356,14 +359,16 @@ func TestRunSplit(t *testing.T) {
 					}
 				}
 				// clean input file directory
-				inputDir := filepath.Dir(tt.args[0])
-				if inputDir != "." && inputDir != currentDir {
-					entries, _ := os.ReadDir(inputDir)
-					for _, entry := range entries {
-						if (strings.HasPrefix(entry.Name(), "split_") ||
-							strings.HasPrefix(entry.Name(), "mysplit_")) &&
-							strings.HasSuffix(entry.Name(), ".pdf") {
-							os.Remove(filepath.Join(inputDir, entry.Name()))
+				if len(tt.args) > 0 && tt.args[0] != "" {
+					inputDir := filepath.Dir(tt.args[0])
+					if inputDir != "." && inputDir != currentDir {
+						entries, _ := os.ReadDir(inputDir)
+						for _, entry := range entries {
+							if (strings.HasPrefix(entry.Name(), "split_") ||
+								strings.HasPrefix(entry.Name(), "mysplit_")) &&
+								strings.HasSuffix(entry.Name(), ".pdf") {
+								os.Remove(filepath.Join(inputDir, entry.Name()))
+							}
 						}
 					}
 				}

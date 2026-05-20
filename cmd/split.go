@@ -86,6 +86,10 @@ func runSplit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to read page count: %w", err)
 	}
 
+	if pageCount <= 1 {
+		return fmt.Errorf("cannot split a single-page PDF")
+	}
+
 	if splitOdd && splitEven {
 		return fmt.Errorf("--odd and --even cannot be used together")
 	}
@@ -412,14 +416,4 @@ func init() {
 	splitCmd.Flags().StringVarP(&splitPage, "page", "p", "", "Page selector (boundary or extract selector)")
 	splitCmd.Flags().StringVarP(&splitOutput, "output", "o", "", "Output file name (single result) or prefix (multiple results)")
 	splitCmd.Flags().StringVarP(&splitDir, "dir", "d", "", "Output directory (default: input PDF directory)")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// splitCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// splitCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

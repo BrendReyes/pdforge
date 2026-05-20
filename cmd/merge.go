@@ -5,7 +5,7 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	//"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -26,16 +26,10 @@ var mergeCmd = &cobra.Command{
 }
 
 func init() {
-	
-	currentDir, err := os.Getwd()
-	if err != nil {
-		currentDir = "."
-	}
-
 	rootCmd.AddCommand(mergeCmd)
 	mergeCmd.SetHelpTemplate(subHelpTemplate)
 	mergeCmd.Flags().StringP("output", "o", "", "Location with filename or filename only")
-	mergeCmd.Flags().StringP("dir", "d", currentDir, "directory")
+	mergeCmd.Flags().StringP("dir", "d", "", "directory (default: first input PDF directory)")
 }
 
 func runMerge(cmd *cobra.Command, args []string) error {
@@ -43,6 +37,13 @@ func runMerge(cmd *cobra.Command, args []string) error {
 	dir, err := cmd.Flags().GetString("dir")
 	if err != nil {
 		return err
+	}
+
+	if dir == "" {
+		dir = filepath.Dir(args[0])
+		if dir == "" {
+			dir = "."
+		}
 	}
 
 	// --dir validator

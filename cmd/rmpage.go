@@ -6,7 +6,6 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -60,11 +59,6 @@ var rmpageCmd = &cobra.Command{
 
 		if err := api.ValidateFile(input, nil); err != nil {
 			return fmt.Errorf("invalid PDF '%s': \n%v", filepath.Base(input), err)
-		}
-
-		_, err = parsePageSpecification(pageSpec)
-		if err != nil {
-			return fmt.Errorf("invalid page specification: %w", err)
 		}
 
 		selectedPages, err := api.ParsePageSelection(pageSpec)
@@ -131,114 +125,10 @@ var rmpageCmd = &cobra.Command{
 	},
 }
 
-var rmpageOutput string
-var rmpageDir string
-var rmpagePage string
-
-// parsePageSpecification parses a page specification string and returns a sorted list of unique page numbers
-func parsePageSpecification(spec string) ([]int, error) {
-	// Check for empty input
-	if strings.TrimSpace(spec) == "" {
-		return nil, fmt.Errorf("page specification cannot be empty")
-	}
-
-	pageMap := make(map[int]bool)
-
-	// Split by comma for multiple parts
-	parts := strings.Split(spec, ",")
-
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-
-		// Check for empty parts (from leading/trailing/consecutive commas)
-		if part == "" {
-			return nil, fmt.Errorf("invalid page specification: empty segment")
-		}
-
-		// Check if it's a range (contains a dash)
-		if strings.Contains(part, "-") {
-			rangeParts := strings.Split(part, "-")
-			if len(rangeParts) != 2 {
-				return nil, fmt.Errorf("invalid range format: %s (too many dashes)", part)
-			}
-
-			startStr := strings.TrimSpace(rangeParts[0])
-			endStr := strings.TrimSpace(rangeParts[1])
-
-			// Check for empty strings after trimming (e.g., from leading dash like "-5")
-			if startStr == "" || endStr == "" {
-				return nil, fmt.Errorf("invalid range format: %s (missing start or end)", part)
-			}
-
-			start, err := strconv.Atoi(startStr)
-			if err != nil {
-				return nil, fmt.Errorf("invalid start page in range: %s", startStr)
-			}
-
-			end, err := strconv.Atoi(endStr)
-			if err != nil {
-				return nil, fmt.Errorf("invalid end page in range: %s", endStr)
-			}
-
-			// Validate page numbers are positive
-			if start < 1 {
-				return nil, fmt.Errorf("page number must be positive: %d", start)
-			}
-			if end < 1 {
-				return nil, fmt.Errorf("page number must be positive: %d", end)
-			}
-
-			// Validate range order
-			if start > end {
-				return nil, fmt.Errorf("invalid range: start (%d) cannot be greater than end (%d)", start, end)
-			}
-
-			// Add all pages in range
-			for i := start; i <= end; i++ {
-				pageMap[i] = true
-			}
-		} else {
-			// Single page number
-			page, err := strconv.Atoi(part)
-			if err != nil {
-				return nil, fmt.Errorf("invalid page number: %s", part)
-			}
-
-			if page < 1 {
-				return nil, fmt.Errorf("page number must be positive: %d", page)
-			}
-
-			pageMap[page] = true
-		}
-	}
-
-	// Check that we got at least one valid page
-	if len(pageMap) == 0 {
-		return nil, fmt.Errorf("no valid pages parsed")
-	}
-
-	// Convert map to sorted slice
-	pages := make([]int, 0, len(pageMap))
-	for page := range pageMap {
-		pages = append(pages, page)
-	}
-
-	// Sort pages using simple bubble sort
-	for i := 0; i < len(pages); i++ {
-		for j := i + 1; j < len(pages); j++ {
-			if pages[i] > pages[j] {
-				pages[i], pages[j] = pages[j], pages[i]
-			}
-		}
-	}
-
-	return pages, nil
-}
-
 func init() {
 	rootCmd.AddCommand(rmpageCmd)
 	rmpageCmd.SetHelpTemplate(subHelpTemplate)
-	rmpageCmd.Flags().StringVarP(&rmpagePage, "page", "p", "", "Page selector (example: 3, 1-4, 2,6-9)")
-	rmpageCmd.Flags().StringVarP(&rmpageOutput, "output", "o", "", "Location with filename or filename only")
-	rmpageCmd.Flags().StringVarP(&rmpageDir, "dir", "d", "", "Output directory (default: input PDF directory)")
+	rmpageCmd.Flags().StringP("page", "p", "", "Page selector (example: 3, 1-4, 2,6-9)")
+	rmpageCmd.Flags().StringP("output", "o", "", "Location with filename or filename only")
+	rmpageCmd.Flags().StringP("dir", "d", "", "Output directory (default: input PDF directory)")
 }

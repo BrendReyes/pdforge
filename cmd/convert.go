@@ -28,16 +28,10 @@ pdforge convert page.png diagram.tiff -o converted.pdf`,
 }
 
 func init() {
-	currentDir, err := os.Getwd()
-	if err != nil {
-		currentDir = "."
-	}
-
 	rootCmd.AddCommand(convertCmd)
 	convertCmd.SetHelpTemplate(subHelpTemplate)
 	convertCmd.Flags().StringP("output", "o", "", "Location with filename or filename only")
-	convertCmd.Flags().StringP("dir", "d", currentDir, "directory")
-
+	convertCmd.Flags().StringP("dir", "d", "", "directory (default: input image directory)")
 }
 
 func runConvert(cmd *cobra.Command, args []string) error {
@@ -45,6 +39,13 @@ func runConvert(cmd *cobra.Command, args []string) error {
 	dir, err := cmd.Flags().GetString("dir")
 	if err != nil {
 		return err
+	}
+
+	if dir == "" {
+		dir = filepath.Dir(args[0])
+		if dir == "" {
+			dir = "."
+		}
 	}
 
 	// --dir validator
@@ -56,8 +57,8 @@ func runConvert(cmd *cobra.Command, args []string) error {
 	bar := progressbar.Default(int64(len(args)), "Validating files")
 	for _, item := range args {
 		ftype := strings.ToLower(filepath.Ext(item))
-		if ftype != ".png" && ftype != ".jpg" && ftype != ".webp" && ftype != ".tiff" {
-			return fmt.Errorf("the file '%s' is invalid, must be supported image file (JPG, PNG, WEBP, TIFF)", filepath.Base(item))
+		if ftype != ".png" && ftype != ".jpg" && ftype != ".webp" && ftype != ".tiff" && ftype != ".tif" {
+			return fmt.Errorf("the file '%s' is invalid, must be supported image file (JPG, PNG, WEBP, TIFF, TIF)", filepath.Base(item))
 		}
 
 		_, err := os.Stat(item)

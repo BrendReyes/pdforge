@@ -6,7 +6,6 @@ Copyright © 2026 NAME HERE <EMAIL ADDRESS>
 package cmd
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -34,16 +33,10 @@ pdforge optimize archive.pdf -o archive_optimized.pdf`,
 }
 
 func init() {
-	
-	currentDir, err := os.Getwd()
-	if err != nil {
-		currentDir = "."
-	}
-
 	rootCmd.AddCommand(optimizeCmd)
 	optimizeCmd.SetHelpTemplate(subHelpTemplate)
 	optimizeCmd.Flags().StringP("output", "o", "", "Location with filename or filename only")
-	optimizeCmd.Flags().StringP("dir", "d", currentDir, "directory")
+	optimizeCmd.Flags().StringP("dir", "d", "", "directory (default: input PDF directory)")
 }
 
 func runOptimize(cmd *cobra.Command, args []string) error {
@@ -53,6 +46,13 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 	dir, err := cmd.Flags().GetString("dir")
 	if err != nil {
 		return err
+	}
+
+	if dir == "" {
+		dir = filepath.Dir(inFile)
+		if dir == "" {
+			dir = "."
+		}
 	}
 
 	// --dir validator
@@ -71,7 +71,6 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("invalid PDF '%s': \n%v", filepath.Base(inFile), err)
 	}
-
 
 	output, err := cmd.Flags().GetString("output")
 	if err != nil {
@@ -115,6 +114,3 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
-
-
-

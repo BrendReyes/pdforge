@@ -47,12 +47,20 @@ func TestRunConvert(t *testing.T) {
 			expectErr: false,
 		},
 		{
+			name: "valid single tif",
+			args: []string{
+				"testdata/images/sample.tif",
+			},
+			expectErr: false,
+		},
+		{
 			name: "valid multiple images mixed types",
 			args: []string{
 				"testdata/images/sample.jpg",
 				"testdata/images/sample.png",
 				"testdata/images/sample.webp",
 				"testdata/images/sample.tiff",
+				"testdata/images/sample.tif",
 			},
 			expectErr: false,
 		},
@@ -232,18 +240,17 @@ func TestRunConvert(t *testing.T) {
 			cmd := convertCmd
 			cmd.ResetFlags()
 
-			currentDir, err := os.Getwd()
-			if err != nil {
-				t.Fatalf("failed to get working directory: %v", err)
-			}
-
-			dir := currentDir
-			if tt.dir != "" {
-				dir = tt.dir
-			}
+			// Mock stdin to auto-answer 'N' to the promptYesNo directory creation
+			cmd.SetIn(strings.NewReader("N\n"))
 
 			cmd.Flags().StringP("output", "o", "", "output")
-			cmd.Flags().StringP("dir", "d", dir, "directory")
+			cmd.Flags().StringP("dir", "d", "", "directory")
+
+			if tt.dir != "" {
+				if err := cmd.Flags().Set("dir", tt.dir); err != nil {
+					t.Fatalf("failed to set dir flag: %v", err)
+				}
+			}
 
 			if tt.output != "" {
 				if err := cmd.Flags().Set("output", tt.output); err != nil {
@@ -251,26 +258,31 @@ func TestRunConvert(t *testing.T) {
 				}
 			}
 
-			err = runConvert(cmd, tt.args)
+			err := runConvert(cmd, tt.args)
 
 			// cleanup generated output files
 			t.Cleanup(func() {
-				// clean currentDir
-				entries, _ := os.ReadDir(currentDir)
+				outDir := tt.dir
+				if outDir == "" && len(tt.args) > 0 && tt.args[0] != "" {
+					outDir = filepath.Dir(tt.args[0])
+				}
+				if outDir == "" {
+					outDir = "."
+				}
+
+				entries, _ := os.ReadDir(outDir)
 				for _, entry := range entries {
-					if strings.HasPrefix(entry.Name(), "converted_") ||
-						entry.Name() == tt.output {
-						os.Remove(filepath.Join(currentDir, entry.Name()))
+					if strings.HasPrefix(entry.Name(), "converted_") || entry.Name() == tt.output {
+						os.Remove(filepath.Join(outDir, entry.Name()))
 					}
 				}
-				// clean custom dir if used
-				if tt.dir != "" {
-					entries, _ := os.ReadDir(tt.dir)
-					for _, entry := range entries {
-						if strings.HasPrefix(entry.Name(), "convert_") ||
-							entry.Name() == tt.output {
-							os.Remove(filepath.Join(tt.dir, entry.Name()))
-						}
+
+				// fallback cleanup for current working dir just in case
+				currentDir, _ := os.Getwd()
+				entries, _ = os.ReadDir(currentDir)
+				for _, entry := range entries {
+					if strings.HasPrefix(entry.Name(), "converted_") || entry.Name() == tt.output {
+						os.Remove(filepath.Join(currentDir, entry.Name()))
 					}
 				}
 			})
