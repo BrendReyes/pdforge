@@ -20,7 +20,9 @@ var convertCmd = &cobra.Command{
 	Use:    "convert <image1> [image2 ...]",
 	Short:  "Convert image files into a single PDF",
 	Long: `The convert command creates a PDF from one or more image files.
-Use it to package scanned pages or image sets into one document.`,
+Use it to package scanned pages or image sets into one document.
+
+Supported image file: JPG, PNG, WEBP, TIFF, TIF`,
 	Example: `pdforge convert scan1.jpg scan2.jpg
 pdforge convert page.png diagram.tiff -o converted.pdf`,
 	RunE: runConvert,
