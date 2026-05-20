@@ -1,6 +1,3 @@
-/*
-Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -15,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// mergeCmd represents the merge command
 var mergeCmd = &cobra.Command{
 	Use:     "merge <file1.pdf> <file2.pdf> [more.pdf...]",
 	Short:   "Merge two or more PDF files into one document",
