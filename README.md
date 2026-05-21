@@ -117,6 +117,7 @@ This project still has limited features but will be implemented in the future:
 3. simple friendly GUI: this is work in progress 
 
 Thanks to the existing library [pdfcpu](https://github.com/pdfcpu/pdfcpu) for making this simple project easier to make.
+Though, the pdfcpu may already have similar cli tool like this, but we still continue for school project, and learning purposes :D 
 
 This project is not or near perfect, there may be still some couple of bugs undiscovered. 
 
