@@ -22,7 +22,7 @@ type FileInfoReport struct {
 func GetFileInfo(output string) (*FileInfoReport, error) {
 	info, err := os.Stat(output)
 	if err != nil {
-		return nil, fmt.Errorf("Getting file info error: %w", err)
+		return nil, fmt.Errorf("getting file info error: %w", err)
 	}
 
 	path, err := filepath.Abs(output)
@@ -32,7 +32,7 @@ func GetFileInfo(output string) (*FileInfoReport, error) {
 
 	pageCount, err := api.PageCountFile(output)
 	if err != nil {
-		return nil, fmt.Errorf("Page count error: %w", err)
+		return nil, fmt.Errorf("page count error: %w", err)
 	}
 
 	return &FileInfoReport{
