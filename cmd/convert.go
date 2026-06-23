@@ -65,7 +65,7 @@ func runConvert(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("invalid image '%s': \n%v", filepath.Base(item), err)
 		}
 
-		bar.Add(1)
+		_ = bar.Add(1)
 	}
 
 	output, err := cmd.Flags().GetString("output")
@@ -99,7 +99,7 @@ func runConvert(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	bar.Finish()
+	_ = bar.Finish()
 
 	fmt.Fprintln(cmd.OutOrStdout(), "===== Conversion Completed =====")
 	report, err := GetFileInfo(output)

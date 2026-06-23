@@ -102,7 +102,7 @@ func ensureOutputDirectory(cmd *cobra.Command, dir string) error {
 		return fmt.Errorf("directory '%s' does not exist", dir)
 	}
 
-	if mkErr := os.MkdirAll(dir, 0o755); mkErr != nil {
+	if mkErr := os.MkdirAll(dir, 0o750); mkErr != nil {
 		return fmt.Errorf("failed to create directory '%s': %w", dir, mkErr)
 	}
 

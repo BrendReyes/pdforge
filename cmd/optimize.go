@@ -99,7 +99,7 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	bar.Finish()
+	_ = bar.Finish()
 
 	fmt.Fprintln(cmd.OutOrStdout(), "===== Optimization Completed =====")
 	report, err := GetFileInfo(output)
