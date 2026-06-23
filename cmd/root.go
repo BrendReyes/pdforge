@@ -84,6 +84,7 @@ All processing happens on your machine, with no uploads and no cloud dependency.
 	pdforge merge a.pdf b.pdf
 	pdforge split report.pdf --page 1-3
 	pdforge rmpage report.pdf 8
+	pdforge rotate report.pdf 90
 	pdforge optimize large.pdf`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:

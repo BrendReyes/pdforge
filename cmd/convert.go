@@ -102,7 +102,7 @@ func runConvert(cmd *cobra.Command, args []string) error {
 	_ = bar.Finish()
 
 	fmt.Fprintln(cmd.OutOrStdout(), "===== Conversion Completed =====")
-	report, err := GetFileInfo(output)
+	report, err := GetFileInfo(output, nil)
 	if err != nil {
 		return err
 	}

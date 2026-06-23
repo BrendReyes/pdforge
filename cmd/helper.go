@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +20,42 @@ type FileInfoReport struct {
 	Location  string
 }
 
-func GetFileInfo(output string) (*FileInfoReport, error) {
+// newConfig builds a pdfcpu configuration carrying the supplied password so
+// password-protected PDFs can be opened. It returns nil when no password is
+// given, which preserves pdfcpu's default behavior for unprotected files.
+func newConfig(password string) *model.Configuration {
+	if password == "" {
+		return nil
+	}
+
+	conf := model.NewDefaultConfiguration()
+	conf.UserPW = password
+	conf.OwnerPW = password
+	return conf
+}
+
+// pageCount returns the page count of path, applying conf so encrypted PDFs can
+// be read. A nil conf works for unprotected files.
+//
+// The file is opened through an os.Root scoped to its directory so the open is
+// confined to that directory (no traversal via symlinks or "..").
+func pageCount(path string, conf *model.Configuration) (int, error) {
+	root, err := os.OpenRoot(filepath.Dir(path))
+	if err != nil {
+		return 0, err
+	}
+	defer root.Close()
+
+	f, err := root.Open(filepath.Base(path))
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+
+	return api.PageCount(f, conf)
+}
+
+func GetFileInfo(output string, conf *model.Configuration) (*FileInfoReport, error) {
 	info, err := os.Stat(output)
 	if err != nil {
 		return nil, fmt.Errorf("getting file info error: %w", err)
@@ -30,7 +66,7 @@ func GetFileInfo(output string) (*FileInfoReport, error) {
 		return nil, fmt.Errorf("error in getting path, err: %w", err)
 	}
 
-	pageCount, err := api.PageCountFile(output)
+	count, err := pageCount(output, conf)
 	if err != nil {
 		return nil, fmt.Errorf("page count error: %w", err)
 	}
@@ -38,7 +74,7 @@ func GetFileInfo(output string) (*FileInfoReport, error) {
 	return &FileInfoReport{
 		Name:      info.Name(),
 		Bytes:     info.Size(),
-		PageCount: pageCount,
+		PageCount: count,
 		Location:  filepath.Dir(path),
 	}, nil
 

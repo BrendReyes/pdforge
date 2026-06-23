@@ -33,6 +33,7 @@ func init() {
 	optimizeCmd.SetHelpTemplate(subHelpTemplate)
 	optimizeCmd.Flags().StringP("output", "o", "", "Location with filename or filename only")
 	optimizeCmd.Flags().StringP("dir", "d", "", "directory (default: input PDF directory)")
+	optimizeCmd.Flags().StringP("password", "P", "", "Password for protected PDFs (output stays protected)")
 }
 
 func runOptimize(cmd *cobra.Command, args []string) error {
@@ -43,6 +44,12 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	password, err := cmd.Flags().GetString("password")
+	if err != nil {
+		return err
+	}
+	conf := newConfig(password)
 
 	if dir == "" {
 		dir = filepath.Dir(inFile)
@@ -63,7 +70,7 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(inFile))
 	}
 
-	err = api.ValidateFile(inFile, nil)
+	err = api.ValidateFile(inFile, conf)
 	if err != nil {
 		return fmt.Errorf("invalid PDF '%s': \n%v", filepath.Base(inFile), err)
 	}
@@ -95,14 +102,14 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 	output = resolveOutputPath(output) // Duplicate overwrite function
 
 	bar := progressbar.Default(-1, "Optimizing")
-	err = api.OptimizeFile(inFile, output, nil)
+	err = api.OptimizeFile(inFile, output, conf)
 	if err != nil {
 		return err
 	}
 	_ = bar.Finish()
 
 	fmt.Fprintln(cmd.OutOrStdout(), "===== Optimization Completed =====")
-	report, err := GetFileInfo(output)
+	report, err := GetFileInfo(output, conf)
 	if err != nil {
 		return err
 	}

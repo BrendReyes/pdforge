@@ -17,6 +17,7 @@ func TestRunSplit(t *testing.T) {
 		output    string
 		dir       string
 		page      string
+		password  string
 		extract   bool
 		odd       bool
 		even      bool
@@ -302,6 +303,25 @@ func TestRunSplit(t *testing.T) {
 			output:    "page1.pdf",
 			expectErr: false,
 		},
+
+		// --- password protected ---
+		{
+			name:      "protected pdf with correct password",
+			args:      []string{"testdata/pdfs/sample_protected.pdf", "1"},
+			password:  "samplefiles",
+			expectErr: false,
+		},
+		{
+			name:      "protected pdf without password",
+			args:      []string{"testdata/pdfs/sample_protected.pdf", "1"},
+			expectErr: true,
+		},
+		{
+			name:      "protected pdf with wrong password",
+			args:      []string{"testdata/pdfs/sample_protected.pdf", "1"},
+			password:  "wrongpw",
+			expectErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -314,6 +334,7 @@ func TestRunSplit(t *testing.T) {
 			splitPage = tt.page
 			splitOutput = tt.output
 			splitDir = tt.dir
+			splitPassword = tt.password
 
 			cmd := splitCmd
 			cmd.ResetFlags()
@@ -334,6 +355,7 @@ func TestRunSplit(t *testing.T) {
 			cmd.Flags().StringVarP(&splitPage, "page", "p", tt.page, "")
 			cmd.Flags().StringVarP(&splitOutput, "output", "o", tt.output, "")
 			cmd.Flags().StringVarP(&splitDir, "dir", "d", tt.dir, "")
+			cmd.Flags().StringVarP(&splitPassword, "password", "P", tt.password, "")
 
 			err = runSplit(cmd, tt.args)
 

@@ -7,8 +7,7 @@ import (
 	"testing"
 )
 
-func TestRunRmpage(t *testing.T) {
-	// ensure testdata/output exists before tests run
+func TestRunRotate(t *testing.T) {
 	os.MkdirAll("testdata/output", 0o755)
 
 	tests := []struct {
@@ -22,116 +21,101 @@ func TestRunRmpage(t *testing.T) {
 	}{
 		// --- happy path ---
 		{
-			name:      "valid remove single page positional",
-			args:      []string{"testdata/pdfs/sample1.pdf", "8"},
+			name:      "rotate all pages clockwise 90",
+			args:      []string{"testdata/pdfs/sample1.pdf", "90"},
 			expectErr: false,
 		},
 		{
-			name:      "valid remove single page via --page flag",
-			args:      []string{"testdata/pdfs/sample1.pdf"},
-			page:      "8",
+			name:      "rotate all pages 180",
+			args:      []string{"testdata/pdfs/sample1.pdf", "180"},
 			expectErr: false,
 		},
 		{
-			name:      "valid remove range positional",
-			args:      []string{"testdata/pdfs/sample1.pdf", "1-3"},
+			name:      "rotate counter-clockwise negative 90",
+			args:      []string{"testdata/pdfs/sample1.pdf", "-90"},
 			expectErr: false,
 		},
 		{
-			name:      "valid remove combination positional",
-			args:      []string{"testdata/pdfs/sample1.pdf", "1,6-11,17"},
+			name:      "rotate selected pages via --page",
+			args:      []string{"testdata/pdfs/sample1.pdf", "90"},
+			page:      "1,3-5",
 			expectErr: false,
 		},
 		{
-			name:      "valid remove with custom output name",
-			args:      []string{"testdata/pdfs/sample1.pdf", "8"},
-			output:    "myremoved.pdf",
+			name:      "rotate with custom output name",
+			args:      []string{"testdata/pdfs/sample1.pdf", "90"},
+			output:    "myrotated.pdf",
 			expectErr: false,
 		},
 		{
-			name:      "valid remove with custom output directory",
-			args:      []string{"testdata/pdfs/sample1.pdf", "8"},
+			name:      "rotate with custom output directory",
+			args:      []string{"testdata/pdfs/sample1.pdf", "90"},
 			dir:       "testdata/output",
 			expectErr: false,
 		},
 		{
 			name:      "uppercase PDF extension input",
-			args:      []string{"testdata/pdfs/sample5.PDF", "1"},
+			args:      []string{"testdata/pdfs/sample5.PDF", "90"},
 			expectErr: false,
 		},
 		{
 			name:      "pdf with spaces in name",
-			args:      []string{"testdata/pdfs/sample 1.pdf", "1"},
-			expectErr: false,
-		},
-		{
-			name:      "pdf with parentheses in name",
-			args:      []string{"testdata/pdfs/sample(1).pdf", "1"},
-			expectErr: false,
-		},
-		{
-			name:      "output name with spaces",
-			args:      []string{"testdata/pdfs/sample1.pdf", "8"},
-			output:    "my removed.pdf",
-			expectErr: false,
-		},
-		{
-			name:      "output uppercase PDF extension",
-			args:      []string{"testdata/pdfs/sample1.pdf", "8"},
-			output:    "removed_upper.PDF",
+			args:      []string{"testdata/pdfs/sample 1.pdf", "90"},
 			expectErr: false,
 		},
 
-		// --- selector handling ---
+		// --- invalid rotation ---
 		{
-			name:      "missing selector no positional no flag",
-			args:      []string{"testdata/pdfs/sample1.pdf"},
+			name:      "rotation not a multiple of 90",
+			args:      []string{"testdata/pdfs/sample1.pdf", "45"},
 			expectErr: true,
 		},
 		{
-			name:      "both positional and --page flag provided",
-			args:      []string{"testdata/pdfs/sample1.pdf", "8"},
-			page:      "8",
+			name:      "rotation is zero",
+			args:      []string{"testdata/pdfs/sample1.pdf", "0"},
 			expectErr: true,
 		},
 		{
-			name:      "invalid page specification",
+			name:      "rotation is not a number",
 			args:      []string{"testdata/pdfs/sample1.pdf", "abc"},
 			expectErr: true,
 		},
 
-		// --- invalid input file ---
+		// --- invalid input ---
 		{
-			name:      "input file is not a pdf",
-			args:      []string{"testdata/images/sample.jpg", "1"},
+			name:      "input is not a pdf",
+			args:      []string{"testdata/images/sample.jpg", "90"},
 			expectErr: true,
 		},
 		{
-			name:      "input file has no extension",
-			args:      []string{"testdata/pdfs/sample", "1"},
+			name:      "input does not exist",
+			args:      []string{"testdata/pdfs/doesnotexist.pdf", "90"},
 			expectErr: true,
 		},
 		{
-			name:      "input file does not exist",
-			args:      []string{"testdata/pdfs/doesnotexist.pdf", "1"},
+			name:      "input has no extension",
+			args:      []string{"testdata/pdfs/sample", "90"},
 			expectErr: true,
 		},
+
+		// --- invalid page selection ---
 		{
-			name:      "empty string as input",
-			args:      []string{"", "1"},
+			name:      "invalid page specification",
+			args:      []string{"testdata/pdfs/sample1.pdf", "90"},
+			page:      "abc",
 			expectErr: true,
 		},
 
 		// --- invalid output ---
 		{
-			name:      "output name with no extension",
-			args:      []string{"testdata/pdfs/sample1.pdf", "8"},
+			name:      "output with no extension",
+			args:      []string{"testdata/pdfs/sample1.pdf", "90"},
 			output:    "result",
 			expectErr: true,
 		},
 		{
-			name:      "output name with wrong extension",
-			args:      []string{"testdata/pdfs/sample1.pdf", "8"},
+			name:      "output with wrong extension",
+			args:      []string{"testdata/pdfs/sample1.pdf", "90"},
 			output:    "result.docx",
 			expectErr: true,
 		},
@@ -139,13 +123,13 @@ func TestRunRmpage(t *testing.T) {
 		// --- directory ---
 		{
 			name:      "non existing directory",
-			args:      []string{"testdata/pdfs/sample1.pdf", "8"},
+			args:      []string{"testdata/pdfs/sample1.pdf", "90"},
 			dir:       "testdata/fakedir",
 			expectErr: true,
 		},
 		{
 			name:      "dir flag points to a file not directory",
-			args:      []string{"testdata/pdfs/sample1.pdf", "8"},
+			args:      []string{"testdata/pdfs/sample1.pdf", "90"},
 			dir:       "testdata/pdfs/sample1.pdf",
 			expectErr: true,
 		},
@@ -153,18 +137,18 @@ func TestRunRmpage(t *testing.T) {
 		// --- password protected ---
 		{
 			name:      "protected pdf with correct password",
-			args:      []string{"testdata/pdfs/sample_protected.pdf", "1"},
+			args:      []string{"testdata/pdfs/sample_protected.pdf", "90"},
 			password:  "samplefiles",
 			expectErr: false,
 		},
 		{
 			name:      "protected pdf without password",
-			args:      []string{"testdata/pdfs/sample_protected.pdf", "1"},
+			args:      []string{"testdata/pdfs/sample_protected.pdf", "90"},
 			expectErr: true,
 		},
 		{
 			name:      "protected pdf with wrong password",
-			args:      []string{"testdata/pdfs/sample_protected.pdf", "1"},
+			args:      []string{"testdata/pdfs/sample_protected.pdf", "90"},
 			password:  "wrongpw",
 			expectErr: true,
 		},
@@ -172,7 +156,7 @@ func TestRunRmpage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd := rmpageCmd
+			cmd := rotateCmd
 			cmd.ResetFlags()
 
 			// Mock stdin to auto-answer 'N' to the promptYesNo directory creation
@@ -205,9 +189,8 @@ func TestRunRmpage(t *testing.T) {
 				}
 			}
 
-			err := cmd.RunE(cmd, tt.args)
+			err := runRotate(cmd, tt.args)
 
-			// cleanup generated output files
 			t.Cleanup(func() {
 				outDir := tt.dir
 				if outDir == "" && len(tt.args) > 0 && tt.args[0] != "" {
@@ -219,7 +202,7 @@ func TestRunRmpage(t *testing.T) {
 
 				entries, _ := os.ReadDir(outDir)
 				for _, entry := range entries {
-					if strings.HasPrefix(entry.Name(), "removed_") || entry.Name() == filepath.Base(tt.output) {
+					if strings.HasPrefix(entry.Name(), "rotated_") || entry.Name() == filepath.Base(tt.output) {
 						os.Remove(filepath.Join(outDir, entry.Name()))
 					}
 				}
