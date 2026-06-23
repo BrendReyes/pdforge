@@ -130,4 +130,3 @@ func promptYesNo(cmd *cobra.Command, message string) (bool, error) {
 	response = strings.TrimSpace(strings.ToLower(response))
 	return response == "y" || response == "yes", nil
 }
-

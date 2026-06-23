@@ -74,7 +74,7 @@ func TestRunMerge(t *testing.T) {
 				"testdata/pdfs/sample1.pdf",
 				"testdata/pdfs/sample2.pdf",
 			},
-			output: "test.txt",
+			output:    "test.txt",
 			expectErr: true,
 		},
 		{

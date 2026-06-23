@@ -125,7 +125,6 @@ func runSplit(cmd *cobra.Command, args []string) error {
 		fmt.Fprintln(cmd.OutOrStdout(), "")
 	}
 
-
 	return nil
 }
 

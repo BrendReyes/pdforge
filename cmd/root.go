@@ -71,7 +71,6 @@ const subHelpTemplate = `{{pdTitle "USAGE"}}
 {{pdMuted "Run pdforge [command] --help for detailed command usage."}}
 `
 
-
 var enableANSI = shouldUseColor()
 
 // rootCmd represents the base command when called without any subcommands

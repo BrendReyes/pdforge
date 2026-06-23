@@ -38,7 +38,7 @@ func init() {
 func runOptimize(cmd *cobra.Command, args []string) error {
 
 	inFile := args[0]
-	
+
 	dir, err := cmd.Flags().GetString("dir")
 	if err != nil {
 		return err

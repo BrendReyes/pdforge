@@ -14,8 +14,8 @@ import (
 
 // convertCmd represents the convert command
 var convertCmd = &cobra.Command{
-	Use:    "convert <image1> [image2 ...]",
-	Short:  "Convert image files into a single PDF",
+	Use:   "convert <image1> [image2 ...]",
+	Short: "Convert image files into a single PDF",
 	Long: `The convert command creates a PDF from one or more image files.
 Use it to package scanned pages or image sets into one document.
 
