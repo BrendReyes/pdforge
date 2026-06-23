@@ -22,7 +22,7 @@ type FileInfoReport struct {
 func GetFileInfo(output string) (*FileInfoReport, error) {
 	info, err := os.Stat(output)
 	if err != nil {
-		return nil, fmt.Errorf("Getting file info error: %w", err)
+		return nil, fmt.Errorf("getting file info error: %w", err)
 	}
 
 	path, err := filepath.Abs(output)
@@ -32,7 +32,7 @@ func GetFileInfo(output string) (*FileInfoReport, error) {
 
 	pageCount, err := api.PageCountFile(output)
 	if err != nil {
-		return nil, fmt.Errorf("Page count error: %w", err)
+		return nil, fmt.Errorf("page count error: %w", err)
 	}
 
 	return &FileInfoReport{
@@ -102,7 +102,7 @@ func ensureOutputDirectory(cmd *cobra.Command, dir string) error {
 		return fmt.Errorf("directory '%s' does not exist", dir)
 	}
 
-	if mkErr := os.MkdirAll(dir, 0o755); mkErr != nil {
+	if mkErr := os.MkdirAll(dir, 0o750); mkErr != nil {
 		return fmt.Errorf("failed to create directory '%s': %w", dir, mkErr)
 	}
 
@@ -130,4 +130,3 @@ func promptYesNo(cmd *cobra.Command, message string) (bool, error) {
 	response = strings.TrimSpace(strings.ToLower(response))
 	return response == "y" || response == "yes", nil
 }
-

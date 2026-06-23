@@ -274,7 +274,7 @@ func TestRunSplit(t *testing.T) {
 		{
 			name:      "output directory with file name",
 			args:      []string{"testdata/pdfs/sample1.pdf", "3"},
-			output:       "testdata/pdfs/output/split_success.pdf",
+			output:    "testdata/pdfs/output/split_success.pdf",
 			expectErr: false,
 		},
 

@@ -14,8 +14,8 @@ import (
 
 // convertCmd represents the convert command
 var convertCmd = &cobra.Command{
-	Use:    "convert <image1> [image2 ...]",
-	Short:  "Convert image files into a single PDF",
+	Use:   "convert <image1> [image2 ...]",
+	Short: "Convert image files into a single PDF",
 	Long: `The convert command creates a PDF from one or more image files.
 Use it to package scanned pages or image sets into one document.
 
@@ -65,7 +65,7 @@ func runConvert(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("invalid image '%s': \n%v", filepath.Base(item), err)
 		}
 
-		bar.Add(1)
+		_ = bar.Add(1)
 	}
 
 	output, err := cmd.Flags().GetString("output")
@@ -99,7 +99,7 @@ func runConvert(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	bar.Finish()
+	_ = bar.Finish()
 
 	fmt.Fprintln(cmd.OutOrStdout(), "===== Conversion Completed =====")
 	report, err := GetFileInfo(output)

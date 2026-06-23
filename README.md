@@ -1,3 +1,5 @@
+![alt text goes here](https://github.com/BrendReyes/pdforge/actions/workflows/ci.yml/badge.svg)
+
 # pdforge
 
 ```text
