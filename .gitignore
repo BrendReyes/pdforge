@@ -1,6 +1,7 @@
 documents/
 
 pdforge
+README.md
 
 # Random pdf file for testing
 invalid_pdf/
@@ -11,4 +12,5 @@ test_files/
 test_files_2/
 img_test_files/pdforge
 img_test_files/
+test_files_samples/
 
