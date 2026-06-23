@@ -33,6 +33,12 @@ var rmpageCmd = &cobra.Command{
 			return err
 		}
 
+		password, err := cmd.Flags().GetString("password")
+		if err != nil {
+			return err
+		}
+		conf := newConfig(password)
+
 		positionalPage := ""
 		if len(args) == 2 {
 			positionalPage = args[1]
@@ -54,7 +60,7 @@ var rmpageCmd = &cobra.Command{
 			return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(input))
 		}
 
-		if err := api.ValidateFile(input, nil); err != nil {
+		if err := api.ValidateFile(input, conf); err != nil {
 			return fmt.Errorf("invalid PDF '%s': \n%v", filepath.Base(input), err)
 		}
 
@@ -105,14 +111,14 @@ var rmpageCmd = &cobra.Command{
 		output = resolveOutputPath(output)
 
 		bar := progressbar.Default(-1, "Removing pages")
-		err = api.RemovePagesFile(input, output, selectedPages, nil)
+		err = api.RemovePagesFile(input, output, selectedPages, conf)
 		if err != nil {
 			return err
 		}
 		_ = bar.Finish()
 
 		fmt.Fprintln(cmd.OutOrStdout(), "===== Page Removal Completed =====")
-		report, err := GetFileInfo(output)
+		report, err := GetFileInfo(output, conf)
 		if err != nil {
 			return err
 		}
@@ -128,4 +134,5 @@ func init() {
 	rmpageCmd.Flags().StringP("page", "p", "", "Page selector (example: 3, 1-4, 2,6-9)")
 	rmpageCmd.Flags().StringP("output", "o", "", "Location with filename or filename only")
 	rmpageCmd.Flags().StringP("dir", "d", "", "Output directory (default: input PDF directory)")
+	rmpageCmd.Flags().StringP("password", "P", "", "Password for protected PDFs (output stays protected)")
 }

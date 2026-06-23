@@ -26,6 +26,7 @@ func init() {
 	mergeCmd.SetHelpTemplate(subHelpTemplate)
 	mergeCmd.Flags().StringP("output", "o", "", "Location with filename or filename only")
 	mergeCmd.Flags().StringP("dir", "d", "", "directory (default: first input PDF directory)")
+	mergeCmd.Flags().StringP("password", "P", "", "Password for protected PDFs (output stays protected)")
 }
 
 func runMerge(cmd *cobra.Command, args []string) error {
@@ -34,6 +35,12 @@ func runMerge(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	password, err := cmd.Flags().GetString("password")
+	if err != nil {
+		return err
+	}
+	conf := newConfig(password)
 
 	if dir == "" {
 		dir = filepath.Dir(args[0])
@@ -55,7 +62,7 @@ func runMerge(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(item))
 		}
 
-		err := api.ValidateFile(item, nil)
+		err := api.ValidateFile(item, conf)
 		if err != nil {
 			return fmt.Errorf("invalid PDF '%s': \n%v", filepath.Base(item), err)
 		}
@@ -91,14 +98,14 @@ func runMerge(cmd *cobra.Command, args []string) error {
 	output = resolveOutputPath(output) // Duplicate overwrite function
 
 	bar = progressbar.Default(-1, "Merging")
-	err = api.MergeCreateFile(args, output, false, nil)
+	err = api.MergeCreateFile(args, output, false, conf)
 	if err != nil {
 		return err
 	}
 	_ = bar.Finish()
 
 	fmt.Fprintln(cmd.OutOrStdout(), "===== Merged Completed =====")
-	report, err := GetFileInfo(output)
+	report, err := GetFileInfo(output, conf)
 	if err != nil {
 		return err
 	}

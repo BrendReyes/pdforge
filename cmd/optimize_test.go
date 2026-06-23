@@ -15,6 +15,7 @@ func TestRunOptimize(t *testing.T) {
 		args      []string
 		output    string
 		dir       string
+		password  string
 		expectErr bool
 	}{
 		// --- happy path ---
@@ -195,6 +196,31 @@ func TestRunOptimize(t *testing.T) {
 			output:    "testdata/output/optimize_success.pdf",
 			expectErr: false,
 		},
+
+		// --- password protected ---
+		{
+			name: "protected pdf with correct password",
+			args: []string{
+				"testdata/pdfs/sample_protected.pdf",
+			},
+			password:  "samplefiles",
+			expectErr: false,
+		},
+		{
+			name: "protected pdf without password",
+			args: []string{
+				"testdata/pdfs/sample_protected.pdf",
+			},
+			expectErr: true,
+		},
+		{
+			name: "protected pdf with wrong password",
+			args: []string{
+				"testdata/pdfs/sample_protected.pdf",
+			},
+			password:  "wrongpw",
+			expectErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -207,6 +233,7 @@ func TestRunOptimize(t *testing.T) {
 
 			cmd.Flags().StringP("output", "o", "", "output")
 			cmd.Flags().StringP("dir", "d", "", "directory")
+			cmd.Flags().StringP("password", "P", "", "password")
 
 			if tt.dir != "" {
 				if err := cmd.Flags().Set("dir", tt.dir); err != nil {
@@ -217,6 +244,12 @@ func TestRunOptimize(t *testing.T) {
 			if tt.output != "" {
 				if err := cmd.Flags().Set("output", tt.output); err != nil {
 					t.Fatalf("failed to set output flag: %v", err)
+				}
+			}
+
+			if tt.password != "" {
+				if err := cmd.Flags().Set("password", tt.password); err != nil {
+					t.Fatalf("failed to set password flag: %v", err)
 				}
 			}
 

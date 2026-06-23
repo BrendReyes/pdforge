@@ -40,6 +40,7 @@ var splitVerbose bool
 var splitOutput string
 var splitDir string
 var splitPage string
+var splitPassword string
 
 func runSplit(cmd *cobra.Command, args []string) error {
 	if len(args) > 1 && looksLikeSelector(args[0]) && strings.ToLower(filepath.Ext(args[1])) == ".pdf" {
@@ -70,20 +71,22 @@ func runSplit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(input))
 	}
 
-	if err := api.ValidateFile(input, nil); err != nil {
+	conf := newConfig(splitPassword)
+
+	if err := api.ValidateFile(input, conf); err != nil {
 		errText := strings.ToLower(err.Error())
-		if strings.Contains(errText, "password") || strings.Contains(errText, "encrypt") {
-			return fmt.Errorf("encrypted PDFs are not supported yet")
+		if conf == nil && (strings.Contains(errText, "password") || strings.Contains(errText, "encrypt")) {
+			return fmt.Errorf("'%s' is password protected: provide the password with --password", filepath.Base(input))
 		}
 		return fmt.Errorf("invalid PDF '%s': \n%v", filepath.Base(input), err)
 	}
 
-	pageCount, err := api.PageCountFile(input)
+	numPages, err := pageCount(input, conf)
 	if err != nil {
 		return fmt.Errorf("failed to read page count: %w", err)
 	}
 
-	if pageCount <= 1 {
+	if numPages <= 1 {
 		return fmt.Errorf("cannot split a single-page PDF")
 	}
 
@@ -94,7 +97,7 @@ func runSplit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--odd/--even can only be used with --extract")
 	}
 
-	jobs, err := buildSplitJobs(selector, pageCount)
+	jobs, err := buildSplitJobs(selector, numPages)
 	if err != nil {
 		return err
 	}
@@ -106,7 +109,7 @@ func runSplit(cmd *cobra.Command, args []string) error {
 
 	for i, job := range jobs {
 		selectedPages := pagesToSelectionTokens(job.Pages)
-		if trimErr := api.TrimFile(input, outputPaths[i], selectedPages, nil); trimErr != nil {
+		if trimErr := api.TrimFile(input, outputPaths[i], selectedPages, conf); trimErr != nil {
 			return fmt.Errorf("failed writing '%s': %w", outputPaths[i], trimErr)
 		}
 	}
@@ -114,7 +117,7 @@ func runSplit(cmd *cobra.Command, args []string) error {
 	fmt.Fprintln(cmd.OutOrStdout(), "===== Split Completed =====")
 	for i, path := range outputPaths {
 		fmt.Fprintf(cmd.OutOrStdout(), "-- File %d --\n", i+1)
-		report, err := GetFileInfo(path)
+		report, err := GetFileInfo(path, conf)
 		if err != nil {
 			return err
 		}
@@ -412,4 +415,5 @@ func init() {
 	splitCmd.Flags().StringVarP(&splitPage, "page", "p", "", "Page selector (boundary or extract selector)")
 	splitCmd.Flags().StringVarP(&splitOutput, "output", "o", "", "Output file name (single result) or prefix (multiple results)")
 	splitCmd.Flags().StringVarP(&splitDir, "dir", "d", "", "Output directory (default: input PDF directory)")
+	splitCmd.Flags().StringVarP(&splitPassword, "password", "P", "", "Password for protected PDFs (output stays protected)")
 }
