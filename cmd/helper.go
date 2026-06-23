@@ -36,8 +36,17 @@ func newConfig(password string) *model.Configuration {
 
 // pageCount returns the page count of path, applying conf so encrypted PDFs can
 // be read. A nil conf works for unprotected files.
+//
+// The file is opened through an os.Root scoped to its directory so the open is
+// confined to that directory (no traversal via symlinks or "..").
 func pageCount(path string, conf *model.Configuration) (int, error) {
-	f, err := os.Open(path)
+	root, err := os.OpenRoot(filepath.Dir(path))
+	if err != nil {
+		return 0, err
+	}
+	defer root.Close()
+
+	f, err := root.Open(filepath.Base(path))
 	if err != nil {
 		return 0, err
 	}
