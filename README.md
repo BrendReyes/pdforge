@@ -2,7 +2,7 @@
 
 # pdforge
 
-![alt text](documents/pdforge.gif)
+![alt text](assets/pdforge.gif)
 
 **pdforge** is a local, privacy-first PDF toolkit for your terminal. Designed for speed and security, all processing happens entirely on your machine—no uploads, no cloud dependencies, and no compromises on privacy.
 
