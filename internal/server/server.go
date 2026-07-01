@@ -2,8 +2,12 @@ package server
 
 import (
 	"context"
+	"io"
+	"io/fs"
 	"net/http"
 	"time"
+
+	"github.com/brendreyes/pdforge/web"
 )
 
 // Server owns the HTTP server, the SSE broker, and the result store.
@@ -53,6 +57,10 @@ func (s *Server) Shutdown() {
 }
 
 func (s *Server) registerRoutes(mux *http.ServeMux) {
+	// Embedded static assets under /static/
+	staticFS, _ := fs.Sub(web.Static, "static")
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
+
 	// Operation endpoints
 	mux.HandleFunc("POST /api/optimize", s.handleOptimize)
 	mux.HandleFunc("POST /api/merge", s.handleMerge)
@@ -65,18 +73,23 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/progress/{token}", s.broker.serveSSE)
 	mux.HandleFunc("GET /api/download/{token}", s.handleDownload)
 
-	// Static assets and index — wired up in Phase 5.
+	// Index — serve the embedded frontend for all unmatched paths
 	mux.HandleFunc("/", s.handleIndex)
 }
 
-// handleIndex is replaced in Phase 5 with the real embedded frontend.
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
+	f, err := web.Static.Open("static/index.html")
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	defer f.Close()
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(`<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><title>pdforge</title></head>
-<body style="font-family:monospace;padding:2rem">
-<h1>pdforge serve</h1><p>Web GUI coming in Phase 5.</p>
-</body>
-</html>`))
+	_, _ = io.Copy(w, f)
 }

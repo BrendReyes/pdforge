@@ -1,0 +1,297 @@
+:root {
+  --bg:           #0f0f0f;
+  --surface:      #181818;
+  --border:       #272727;
+  --text:         #d4d4d4;
+  --text-muted:   #6b7280;
+  --accent:       #4ade80;
+  --error:        #f87171;
+  --mono:         'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  --sans:         system-ui, -apple-system, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+.shell {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.75rem;
+}
+
+.logo {
+  font-family: var(--mono);
+  font-size: 1.25rem;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+
+.tagline {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ── Tabs ───────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.tab:hover  { color: var(--text); }
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Operation panels ───────────────────────────────────── */
+
+.op-panel        { display: none; }
+.op-panel.active { display: block; }
+
+.desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+/* ── Form ───────────────────────────────────────────────── */
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.opt {
+  font-size: 0.68rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+.hint {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.hint code {
+  font-family: var(--mono);
+  background: var(--surface);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+}
+
+input[type="text"],
+input[type="password"],
+select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  padding: 0.45rem 0.7rem;
+  outline: none;
+  transition: border-color 0.12s;
+  width: 100%;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+select:focus {
+  border-color: var(--accent);
+}
+
+select option { background: var(--surface); }
+
+input[type="file"] {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.78rem;
+  margin-right: 0.7rem;
+  padding: 0.3rem 0.65rem;
+  transition: border-color 0.12s;
+}
+
+input[type="file"]::file-selector-button:hover {
+  border-color: var(--accent);
+}
+
+.checkboxes { gap: 0.55rem; }
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.check input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+
+.btn-submit {
+  align-self: flex-start;
+  background: var(--accent);
+  border: none;
+  border-radius: 4px;
+  color: #000;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.5rem 1.3rem;
+  transition: opacity 0.12s;
+  margin-top: 0.25rem;
+}
+
+.btn-submit:hover    { opacity: 0.85; }
+.btn-submit:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Status area ────────────────────────────────────────── */
+
+.status-area {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.hidden { display: none !important; }
+
+.status-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.status-text {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Indeterminate progress track */
+.progress-track {
+  width: 100%;
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill {
+  position: absolute;
+  top: 0;
+  left: -45%;
+  height: 100%;
+  width: 45%;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: indeterminate 1.4s ease-in-out infinite;
+}
+
+@keyframes indeterminate {
+  0%   { left: -45%; }
+  100% { left: 100%; }
+}
+
+.progress-fill.done {
+  animation: none;
+  left: 0;
+  width: 100%;
+}
+
+/* ── Result / download ──────────────────────────────────── */
+
+.result-area { margin-top: 1.1rem; }
+
+.btn-download {
+  display: inline-block;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  padding: 0.45rem 1.1rem;
+  text-decoration: none;
+  transition: background 0.12s, color 0.12s;
+}
+
+.btn-download:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+/* ── Error ──────────────────────────────────────────────── */
+
+.error-area { margin-top: 0.8rem; }
+
+.error-text {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--error);
+}

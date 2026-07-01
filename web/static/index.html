@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>pdforge</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <span class="logo">pdforge</span>
+      <span class="tagline">local PDF toolkit</span>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-op="optimize">optimize</button>
+      <button class="tab" data-op="merge">merge</button>
+      <button class="tab" data-op="convert">convert</button>
+      <button class="tab" data-op="rotate">rotate</button>
+      <button class="tab" data-op="rmpage">rmpage</button>
+      <button class="tab" data-op="split">split</button>
+    </nav>
+
+    <main>
+      <!-- Optimize -->
+      <section id="op-optimize" class="op-panel active">
+        <p class="desc">Reduce file size by optimizing internal PDF structure.</p>
+        <form id="form-optimize">
+          <div class="field">
+            <label for="opt-file">PDF file</label>
+            <input id="opt-file" type="file" name="file" accept=".pdf" required>
+          </div>
+          <div class="field">
+            <label for="opt-pass">Password <span class="opt">(optional)</span></label>
+            <input id="opt-pass" type="password" name="password" placeholder="leave blank if none" autocomplete="off">
+          </div>
+          <button type="submit" class="btn-submit">Run optimize</button>
+        </form>
+      </section>
+
+      <!-- Merge -->
+      <section id="op-merge" class="op-panel">
+        <p class="desc">Combine multiple PDFs into one document, in order.</p>
+        <form id="form-merge">
+          <div class="field">
+            <label for="merge-files">PDF files <span class="opt">(select 2 or more)</span></label>
+            <input id="merge-files" type="file" name="files" accept=".pdf" multiple required>
+          </div>
+          <div class="field">
+            <label for="merge-pass">Password <span class="opt">(optional)</span></label>
+            <input id="merge-pass" type="password" name="password" placeholder="leave blank if none" autocomplete="off">
+          </div>
+          <button type="submit" class="btn-submit">Run merge</button>
+        </form>
+      </section>
+
+      <!-- Convert -->
+      <section id="op-convert" class="op-panel">
+        <p class="desc">Convert JPG, PNG, WEBP, or TIFF images into a single PDF.</p>
+        <form id="form-convert">
+          <div class="field">
+            <label for="conv-files">Image files</label>
+            <input id="conv-files" type="file" name="files" accept=".jpg,.jpeg,.png,.webp,.tiff,.tif" multiple required>
+          </div>
+          <button type="submit" class="btn-submit">Run convert</button>
+        </form>
+      </section>
+
+      <!-- Rotate -->
+      <section id="op-rotate" class="op-panel">
+        <p class="desc">Rotate pages in a PDF by 90, 180, or 270 degrees.</p>
+        <form id="form-rotate">
+          <div class="field">
+            <label for="rot-file">PDF file</label>
+            <input id="rot-file" type="file" name="file" accept=".pdf" required>
+          </div>
+          <div class="field">
+            <label for="rot-deg">Degrees</label>
+            <select id="rot-deg" name="degrees">
+              <option value="90">90° clockwise</option>
+              <option value="180">180°</option>
+              <option value="270">270° clockwise (90° counter-clockwise)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="rot-pages">Page range <span class="opt">(optional — e.g. 1,3-5)</span></label>
+            <input id="rot-pages" type="text" name="page_spec" placeholder="leave blank to rotate all pages">
+          </div>
+          <div class="field">
+            <label for="rot-pass">Password <span class="opt">(optional)</span></label>
+            <input id="rot-pass" type="password" name="password" placeholder="leave blank if none" autocomplete="off">
+          </div>
+          <button type="submit" class="btn-submit">Run rotate</button>
+        </form>
+      </section>
+
+      <!-- Remove Pages -->
+      <section id="op-rmpage" class="op-panel">
+        <p class="desc">Delete specific pages from a PDF.</p>
+        <form id="form-rmpage">
+          <div class="field">
+            <label for="rm-file">PDF file</label>
+            <input id="rm-file" type="file" name="file" accept=".pdf" required>
+          </div>
+          <div class="field">
+            <label for="rm-pages">Pages to remove</label>
+            <input id="rm-pages" type="text" name="page_spec" placeholder="e.g. 1,3-5" required>
+          </div>
+          <div class="field">
+            <label for="rm-pass">Password <span class="opt">(optional)</span></label>
+            <input id="rm-pass" type="password" name="password" placeholder="leave blank if none" autocomplete="off">
+          </div>
+          <button type="submit" class="btn-submit">Run rmpage</button>
+        </form>
+      </section>
+
+      <!-- Split -->
+      <section id="op-split" class="op-panel">
+        <p class="desc">Split a PDF into multiple files by page ranges.</p>
+        <form id="form-split">
+          <div class="field">
+            <label for="sp-file">PDF file</label>
+            <input id="sp-file" type="file" name="file" accept=".pdf" required>
+          </div>
+          <div class="field">
+            <label for="sp-sel">Selector</label>
+            <input id="sp-sel" type="text" name="selector" placeholder="e.g. 1-3,4-6  or  every:2" required>
+            <span class="hint">Comma-separated page ranges, or <code>every:N</code> to split every N pages</span>
+          </div>
+          <div class="field checkboxes">
+            <label class="check"><input type="checkbox" name="extract"> Extract (copy pages, keep original intact)</label>
+            <label class="check"><input type="checkbox" name="odd"> Odd pages only</label>
+            <label class="check"><input type="checkbox" name="even"> Even pages only</label>
+          </div>
+          <div class="field">
+            <label for="sp-pass">Password <span class="opt">(optional)</span></label>
+            <input id="sp-pass" type="password" name="password" placeholder="leave blank if none" autocomplete="off">
+          </div>
+          <button type="submit" class="btn-submit">Run split</button>
+        </form>
+      </section>
+
+      <!-- Shared progress + result area -->
+      <div id="status-area" class="status-area hidden">
+        <div class="status-bar">
+          <span id="status-text" class="status-text"></span>
+          <div id="progress-track" class="progress-track">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+        </div>
+        <div id="result-area" class="result-area hidden">
+          <a id="download-link" class="btn-download" href="#">Download result</a>
+        </div>
+        <div id="error-area" class="error-area hidden">
+          <span id="error-text" class="error-text"></span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
