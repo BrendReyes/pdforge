@@ -3,14 +3,12 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
-	"strconv"
 	"strings"
 
-	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/brendreyes/pdforge/internal/pdfops"
 	"github.com/spf13/cobra"
 )
 
-// splitCmd represents the split command
 var splitCmd = &cobra.Command{
 	Use:   "split [flags] <input.pdf> [selector]",
 	Short: "Split a PDF by boundary or extract selected ranges",
@@ -26,11 +24,6 @@ If --output is omitted, split uses the default naming pattern for the selected m
   pdforge split input.pdf 8 -o section -d ./out`,
 	Args: cobra.RangeArgs(1, 2),
 	RunE: runSplit,
-}
-
-type splitJob struct {
-	Label string
-	Pages []int
 }
 
 var splitExtract bool
@@ -67,21 +60,14 @@ func runSplit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing selector: provide [selector] or --page")
 	}
 
-	if strings.ToLower(filepath.Ext(input)) != ".pdf" {
-		return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(input))
+	if splitOdd && splitEven {
+		return fmt.Errorf("--odd and --even cannot be used together")
+	}
+	if !splitExtract && (splitOdd || splitEven) {
+		return fmt.Errorf("--odd/--even can only be used with --extract")
 	}
 
-	conf := newConfig(splitPassword)
-
-	if err := api.ValidateFile(input, conf); err != nil {
-		errText := strings.ToLower(err.Error())
-		if conf == nil && (strings.Contains(errText, "password") || strings.Contains(errText, "encrypt")) {
-			return fmt.Errorf("'%s' is password protected: provide the password with --password", filepath.Base(input))
-		}
-		return fmt.Errorf("invalid PDF '%s': \n%v", filepath.Base(input), err)
-	}
-
-	numPages, err := pageCount(input, conf)
+	numPages, err := pdfops.PageCount(input, splitPassword)
 	if err != nil {
 		return fmt.Errorf("failed to read page count: %w", err)
 	}
@@ -90,14 +76,11 @@ func runSplit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("cannot split a single-page PDF")
 	}
 
-	if splitOdd && splitEven {
-		return fmt.Errorf("--odd and --even cannot be used together")
-	}
-	if !splitExtract && (splitOdd || splitEven) {
-		return fmt.Errorf("--odd/--even can only be used with --extract")
-	}
-
-	jobs, err := buildSplitJobs(selector, numPages)
+	jobs, err := pdfops.BuildSplitJobs(selector, numPages, pdfops.SplitOptions{
+		Extract: splitExtract,
+		Odd:     splitOdd,
+		Even:    splitEven,
+	})
 	if err != nil {
 		return err
 	}
@@ -107,21 +90,15 @@ func runSplit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	for i, job := range jobs {
-		selectedPages := pagesToSelectionTokens(job.Pages)
-		if trimErr := api.TrimFile(input, outputPaths[i], selectedPages, conf); trimErr != nil {
-			return fmt.Errorf("failed writing '%s': %w", outputPaths[i], trimErr)
-		}
+	results, err := pdfops.Split(input, outputPaths, jobs, splitPassword)
+	if err != nil {
+		return err
 	}
 
 	fmt.Fprintln(cmd.OutOrStdout(), "===== Split Completed =====")
-	for i, path := range outputPaths {
+	for i, result := range results {
 		fmt.Fprintf(cmd.OutOrStdout(), "-- File %d --\n", i+1)
-		report, err := GetFileInfo(path, conf)
-		if err != nil {
-			return err
-		}
-		report.PrintReport(cmd.OutOrStdout())
+		result.PrintReport(cmd.OutOrStdout())
 		if splitVerbose {
 			fmt.Fprintf(cmd.OutOrStdout(), "Pages: %s\n", pagesDisplay(jobs[i].Pages))
 		}
@@ -131,125 +108,7 @@ func runSplit(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func buildSplitJobs(selector string, pageCount int) ([]splitJob, error) {
-	if splitExtract {
-		return buildExtractJobs(selector, pageCount)
-	}
-
-	splitAt, err := strconv.Atoi(selector)
-	if err != nil {
-		return nil, fmt.Errorf("invalid split page '%s': expected a page number", selector)
-	}
-
-	if splitAt < 1 || splitAt >= pageCount {
-		return nil, fmt.Errorf("split page out of bounds: %d (valid range: 1-%d, and split point must be before last page)", splitAt, pageCount)
-	}
-
-	pad := pagePadWidth(pageCount)
-	leftPages := buildRange(1, splitAt)
-	rightPages := buildRange(splitAt+1, pageCount)
-
-	leftLabel := fmt.Sprintf("%0*d-%0*d", pad, 1, pad, splitAt)
-	rightLabel := fmt.Sprintf("%0*d-%0*d", pad, splitAt+1, pad, pageCount)
-
-	return []splitJob{
-		{Label: leftLabel, Pages: leftPages},
-		{Label: rightLabel, Pages: rightPages},
-	}, nil
-}
-
-func buildExtractJobs(selector string, pageCount int) ([]splitJob, error) {
-	if strings.TrimSpace(selector) == "" {
-		return nil, fmt.Errorf("page selection cannot be empty")
-	}
-
-	tokens := strings.Split(selector, ",")
-	if len(tokens) == 0 {
-		return nil, fmt.Errorf("page selection cannot be empty")
-	}
-
-	pad := pagePadWidth(pageCount)
-	jobs := make([]splitJob, 0, len(tokens))
-
-	for _, raw := range tokens {
-		token := strings.TrimSpace(raw)
-		if token == "" {
-			return nil, fmt.Errorf("invalid page selection: empty segment")
-		}
-
-		pages, err := parseSegment(token, pageCount)
-		if err != nil {
-			return nil, err
-		}
-
-		pages = filterParity(pages, splitOdd, splitEven)
-		if len(pages) == 0 {
-			return nil, fmt.Errorf("page selection '%s' has no pages after applying odd/even filter", token)
-		}
-
-		label := formatSegmentLabel(pages, pad)
-		jobs = append(jobs, splitJob{Label: label, Pages: pages})
-	}
-
-	return jobs, nil
-}
-
-func parseSegment(token string, pageCount int) ([]int, error) {
-	if !strings.Contains(token, "-") {
-		page, err := strconv.Atoi(token)
-		if err != nil {
-			return nil, fmt.Errorf("invalid page '%s'", token)
-		}
-		if page < 1 || page > pageCount {
-			return nil, fmt.Errorf("page out of bounds: %d (valid range: 1-%d)", page, pageCount)
-		}
-		return []int{page}, nil
-	}
-
-	parts := strings.Split(token, "-")
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid range '%s'", token)
-	}
-
-	left := strings.TrimSpace(parts[0])
-	right := strings.TrimSpace(parts[1])
-
-	if left == "" && right == "" {
-		return nil, fmt.Errorf("invalid range '%s'", token)
-	}
-
-	start := 1
-	end := pageCount
-	var err error
-
-	if left != "" {
-		start, err = strconv.Atoi(left)
-		if err != nil {
-			return nil, fmt.Errorf("invalid range start '%s'", left)
-		}
-	}
-
-	if right != "" {
-		end, err = strconv.Atoi(right)
-		if err != nil {
-			return nil, fmt.Errorf("invalid range end '%s'", right)
-		}
-	}
-
-	if start < 1 || start > pageCount {
-		return nil, fmt.Errorf("range start out of bounds: %d (valid range: 1-%d)", start, pageCount)
-	}
-	if end < 1 || end > pageCount {
-		return nil, fmt.Errorf("range end out of bounds: %d (valid range: 1-%d)", end, pageCount)
-	}
-	if start > end {
-		return nil, fmt.Errorf("invalid range '%s': start (%d) cannot be greater than end (%d)", token, start, end)
-	}
-
-	return buildRange(start, end), nil
-}
-
-func resolveSplitOutputs(cmd *cobra.Command, inputPath string, jobs []splitJob) ([]string, error) {
+func resolveSplitOutputs(cmd *cobra.Command, inputPath string, jobs []pdfops.SplitJob) ([]string, error) {
 	if len(jobs) == 0 {
 		return nil, fmt.Errorf("no split jobs to process")
 	}
@@ -311,82 +170,9 @@ func resolveSplitOutputs(cmd *cobra.Command, inputPath string, jobs []splitJob) 
 	return paths, nil
 }
 
-func pagePadWidth(pageCount int) int {
-	width := len(strconv.Itoa(pageCount))
-	if width < 3 {
-		return 3
-	}
-	return width
-}
-
-func buildRange(start, end int) []int {
-	pages := make([]int, 0, end-start+1)
-	for i := start; i <= end; i++ {
-		pages = append(pages, i)
-	}
-	return pages
-}
-
-func filterParity(pages []int, odd bool, even bool) []int {
-	if !odd && !even {
-		return pages
-	}
-
-	filtered := make([]int, 0, len(pages))
-	for _, p := range pages {
-		if odd && p%2 == 1 {
-			filtered = append(filtered, p)
-		}
-		if even && p%2 == 0 {
-			filtered = append(filtered, p)
-		}
-	}
-
-	return filtered
-}
-
-func formatSegmentLabel(pages []int, pad int) string {
-	if len(pages) == 1 {
-		return fmt.Sprintf("%0*d", pad, pages[0])
-	}
-
-	return fmt.Sprintf("%0*d-%0*d", pad, pages[0], pad, pages[len(pages)-1])
-}
-
 func pagesDisplay(pages []int) string {
-	parts := pagesToSelectionTokens(pages)
+	parts := pdfops.PagesToSelectionTokens(pages)
 	return strings.Join(parts, ",")
-}
-
-func pagesToSelectionTokens(pages []int) []string {
-	if len(pages) == 0 {
-		return nil
-	}
-
-	tokens := make([]string, 0)
-	start := pages[0]
-	prev := pages[0]
-
-	for i := 1; i < len(pages); i++ {
-		if pages[i] == prev+1 {
-			prev = pages[i]
-			continue
-		}
-
-		tokens = append(tokens, formatRangeToken(start, prev))
-		start = pages[i]
-		prev = pages[i]
-	}
-
-	tokens = append(tokens, formatRangeToken(start, prev))
-	return tokens
-}
-
-func formatRangeToken(start, end int) string {
-	if start == end {
-		return strconv.Itoa(start)
-	}
-	return fmt.Sprintf("%d-%d", start, end)
 }
 
 func looksLikeSelector(s string) bool {

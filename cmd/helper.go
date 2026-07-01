@@ -8,94 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pdfcpu/pdfcpu/pkg/api"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/spf13/cobra"
 )
 
-type FileInfoReport struct {
-	Name      string
-	Bytes     int64
-	PageCount int
-	Location  string
-}
-
-// newConfig builds a pdfcpu configuration carrying the supplied password so
-// password-protected PDFs can be opened. It returns nil when no password is
-// given, which preserves pdfcpu's default behavior for unprotected files.
-func newConfig(password string) *model.Configuration {
-	if password == "" {
-		return nil
-	}
-
-	conf := model.NewDefaultConfiguration()
-	conf.UserPW = password
-	conf.OwnerPW = password
-	return conf
-}
-
-// pageCount returns the page count of path, applying conf so encrypted PDFs can
-// be read. A nil conf works for unprotected files.
-//
-// The file is opened through an os.Root scoped to its directory so the open is
-// confined to that directory (no traversal via symlinks or "..").
-func pageCount(path string, conf *model.Configuration) (int, error) {
-	root, err := os.OpenRoot(filepath.Dir(path))
-	if err != nil {
-		return 0, err
-	}
-	defer root.Close()
-
-	f, err := root.Open(filepath.Base(path))
-	if err != nil {
-		return 0, err
-	}
-	defer f.Close()
-
-	return api.PageCount(f, conf)
-}
-
-func GetFileInfo(output string, conf *model.Configuration) (*FileInfoReport, error) {
-	info, err := os.Stat(output)
-	if err != nil {
-		return nil, fmt.Errorf("getting file info error: %w", err)
-	}
-
-	path, err := filepath.Abs(output)
-	if err != nil {
-		return nil, fmt.Errorf("error in getting path, err: %w", err)
-	}
-
-	count, err := pageCount(output, conf)
-	if err != nil {
-		return nil, fmt.Errorf("page count error: %w", err)
-	}
-
-	return &FileInfoReport{
-		Name:      info.Name(),
-		Bytes:     info.Size(),
-		PageCount: count,
-		Location:  filepath.Dir(path),
-	}, nil
-
-}
-
-func (r *FileInfoReport) PrintReport(w io.Writer) {
-	var fileSize string
-	sizeMB := float64(r.Bytes) / (1024 * 1024)
-	sizeKB := float64(r.Bytes) / (1024)
-
-	if sizeMB >= 1 {
-		fileSize = fmt.Sprintf("%.2f MB", sizeMB)
-	} else {
-		fileSize = fmt.Sprintf("%.2f KB", sizeKB)
-	}
-
-	fmt.Fprintf(w, "Name: %s\nSize: %s\nPages: %d\nLocation: %s\n", r.Name, fileSize, r.PageCount, r.Location)
-}
-
-// this is to avoid overwriting a file with same name
-// e.g. merged (1).pdf, merged (2).pdf
+// resolveOutputPath avoids overwriting an existing file by appending (1), (2), …
 func resolveOutputPath(output string) string {
 	_, err := os.Stat(output)
 	if os.IsNotExist(err) {

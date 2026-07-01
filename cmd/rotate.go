@@ -7,12 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/brendreyes/pdforge/internal/pdfops"
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
 
-// rotateCmd represents the rotate command
 var rotateCmd = &cobra.Command{
 	Use:   "rotate <input.pdf> <degrees>",
 	Short: "Rotate pages of a PDF clockwise",
@@ -47,40 +46,15 @@ func runRotate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("invalid rotation '%s': expected a multiple of 90 (e.g. 90, 180, -90)", args[1])
 	}
-	if rotation == 0 || rotation%90 != 0 {
-		return fmt.Errorf("invalid rotation %d: must be a non-zero multiple of 90", rotation)
-	}
 
 	password, err := cmd.Flags().GetString("password")
 	if err != nil {
 		return err
 	}
-	conf := newConfig(password)
-
-	if strings.ToLower(filepath.Ext(input)) != ".pdf" {
-		return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(input))
-	}
-
-	if err := api.ValidateFile(input, conf); err != nil {
-		errText := strings.ToLower(err.Error())
-		if conf == nil && (strings.Contains(errText, "password") || strings.Contains(errText, "encrypt")) {
-			return fmt.Errorf("'%s' is password protected: provide the password with --password", filepath.Base(input))
-		}
-		return fmt.Errorf("invalid PDF '%s': \n%v", filepath.Base(input), err)
-	}
 
 	pageFlag, err := cmd.Flags().GetString("page")
 	if err != nil {
 		return err
-	}
-
-	// nil selectedPages rotates every page.
-	var selectedPages []string
-	if pageSpec := strings.TrimSpace(pageFlag); pageSpec != "" {
-		selectedPages, err = api.ParsePageSelection(pageSpec)
-		if err != nil {
-			return fmt.Errorf("invalid page specification: %w", err)
-		}
 	}
 
 	outputFlag, err := cmd.Flags().GetString("output")
@@ -109,10 +83,6 @@ func runRotate(cmd *cobra.Command, args []string) error {
 		output = filepath.Join(dirFlag, output)
 	}
 
-	if strings.ToLower(filepath.Ext(output)) != ".pdf" {
-		return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", output)
-	}
-
 	outDir := filepath.Dir(output)
 	if outDir == "" {
 		outDir = "."
@@ -125,16 +95,13 @@ func runRotate(cmd *cobra.Command, args []string) error {
 	output = resolveOutputPath(output)
 
 	bar := progressbar.Default(-1, "Rotating")
-	if err := api.RotateFile(input, output, rotation, selectedPages, conf); err != nil {
+	report, err := pdfops.Rotate(input, output, rotation, pageFlag, password)
+	if err != nil {
 		return err
 	}
 	_ = bar.Finish()
 
 	fmt.Fprintln(cmd.OutOrStdout(), "===== Rotation Completed =====")
-	report, err := GetFileInfo(output, conf)
-	if err != nil {
-		return err
-	}
 	report.PrintReport(cmd.OutOrStdout())
 
 	return nil

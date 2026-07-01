@@ -3,15 +3,13 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/brendreyes/pdforge/internal/pdfops"
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
 
-// optimizeCmd represents the optimize command
 var optimizeCmd = &cobra.Command{
 	Use:   "optimize <file.pdf>",
 	Short: "Optimize a PDF to reduce file size",
@@ -37,7 +35,6 @@ func init() {
 }
 
 func runOptimize(cmd *cobra.Command, args []string) error {
-
 	inFile := args[0]
 
 	dir, err := cmd.Flags().GetString("dir")
@@ -49,7 +46,6 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	conf := newConfig(password)
 
 	if dir == "" {
 		dir = filepath.Dir(inFile)
@@ -58,21 +54,8 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// --dir validator
-	err = ensureOutputDirectory(cmd, dir)
-	if err != nil {
+	if err := ensureOutputDirectory(cmd, dir); err != nil {
 		return err
-	}
-
-	// Invalid args checker
-	ftype := strings.ToLower(filepath.Ext(inFile))
-	if ftype != ".pdf" {
-		return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(inFile))
-	}
-
-	err = api.ValidateFile(inFile, conf)
-	if err != nil {
-		return fmt.Errorf("invalid PDF '%s': \n%v", filepath.Base(inFile), err)
 	}
 
 	output, err := cmd.Flags().GetString("output")
@@ -80,17 +63,10 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// auto naming the file if no name is passed
 	if output == "" {
 		output = "optimized_" + time.Now().Format("20060102_150405") + ".pdf"
 	}
 
-	fileType := strings.ToLower(filepath.Ext(output))
-	if fileType != ".pdf" {
-		return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", output)
-	}
-
-	// Route output path correctly
 	if filepath.IsAbs(output) || filepath.Dir(output) != "." {
 		outputDir := filepath.Dir(output)
 		if err := ensureOutputDirectory(cmd, outputDir); err != nil {
@@ -99,20 +75,16 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 	} else {
 		output = filepath.Join(dir, output)
 	}
-	output = resolveOutputPath(output) // Duplicate overwrite function
+	output = resolveOutputPath(output)
 
 	bar := progressbar.Default(-1, "Optimizing")
-	err = api.OptimizeFile(inFile, output, conf)
+	report, err := pdfops.Optimize(inFile, output, password)
 	if err != nil {
 		return err
 	}
 	_ = bar.Finish()
 
 	fmt.Fprintln(cmd.OutOrStdout(), "===== Optimization Completed =====")
-	report, err := GetFileInfo(output, conf)
-	if err != nil {
-		return err
-	}
 	report.PrintReport(cmd.OutOrStdout())
 
 	return nil

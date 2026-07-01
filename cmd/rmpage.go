@@ -6,12 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/brendreyes/pdforge/internal/pdfops"
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
 
-// rmpageCmd represents the rmpage command
 var rmpageCmd = &cobra.Command{
 	Use:   "rmpage <input_path> [page_selector]",
 	Short: "Remove one or more pages from a PDF",
@@ -37,7 +36,6 @@ var rmpageCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		conf := newConfig(password)
 
 		positionalPage := ""
 		if len(args) == 2 {
@@ -54,19 +52,6 @@ var rmpageCmd = &cobra.Command{
 		}
 		if pageSpec == "" {
 			return fmt.Errorf("missing page selector: provide [page_selector] or --page")
-		}
-
-		if strings.ToLower(filepath.Ext(input)) != ".pdf" {
-			return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", filepath.Base(input))
-		}
-
-		if err := api.ValidateFile(input, conf); err != nil {
-			return fmt.Errorf("invalid PDF '%s': \n%v", filepath.Base(input), err)
-		}
-
-		selectedPages, err := api.ParsePageSelection(pageSpec)
-		if err != nil {
-			return fmt.Errorf("invalid page specification: %w", err)
 		}
 
 		outputFlag, err := cmd.Flags().GetString("output")
@@ -95,10 +80,6 @@ var rmpageCmd = &cobra.Command{
 			output = filepath.Join(dirFlag, output)
 		}
 
-		if strings.ToLower(filepath.Ext(output)) != ".pdf" {
-			return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", output)
-		}
-
 		outDir := filepath.Dir(output)
 		if outDir == "" {
 			outDir = "."
@@ -111,17 +92,13 @@ var rmpageCmd = &cobra.Command{
 		output = resolveOutputPath(output)
 
 		bar := progressbar.Default(-1, "Removing pages")
-		err = api.RemovePagesFile(input, output, selectedPages, conf)
+		report, err := pdfops.RemovePages(input, output, pageSpec, password)
 		if err != nil {
 			return err
 		}
 		_ = bar.Finish()
 
 		fmt.Fprintln(cmd.OutOrStdout(), "===== Page Removal Completed =====")
-		report, err := GetFileInfo(output, conf)
-		if err != nil {
-			return err
-		}
 		report.PrintReport(cmd.OutOrStdout())
 
 		return nil

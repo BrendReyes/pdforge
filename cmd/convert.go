@@ -2,17 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/brendreyes/pdforge/internal/pdfops"
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
 
-// convertCmd represents the convert command
 var convertCmd = &cobra.Command{
 	Use:   "convert <image1> [image2 ...]",
 	Short: "Convert image files into a single PDF",
@@ -34,7 +31,6 @@ func init() {
 }
 
 func runConvert(cmd *cobra.Command, args []string) error {
-
 	dir, err := cmd.Flags().GetString("dir")
 	if err != nil {
 		return err
@@ -47,25 +43,8 @@ func runConvert(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// --dir validator
 	if err := ensureOutputDirectory(cmd, dir); err != nil {
 		return err
-	}
-
-	// Invalid args checker
-	bar := progressbar.Default(int64(len(args)), "Validating files")
-	for _, item := range args {
-		ftype := strings.ToLower(filepath.Ext(item))
-		if ftype != ".png" && ftype != ".jpg" && ftype != ".webp" && ftype != ".tiff" && ftype != ".tif" {
-			return fmt.Errorf("the file '%s' is invalid, must be supported image file (JPG, PNG, WEBP, TIFF, TIF)", filepath.Base(item))
-		}
-
-		_, err := os.Stat(item)
-		if err != nil {
-			return fmt.Errorf("invalid image '%s': \n%v", filepath.Base(item), err)
-		}
-
-		_ = bar.Add(1)
 	}
 
 	output, err := cmd.Flags().GetString("output")
@@ -73,17 +52,10 @@ func runConvert(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// auto naming the file if no name is passed
 	if output == "" {
 		output = "converted_" + time.Now().Format("20060102_150405") + ".pdf"
 	}
 
-	fileType := strings.ToLower(filepath.Ext(output))
-	if fileType != ".pdf" {
-		return fmt.Errorf("the file '%s' is invalid, must be '.pdf'", output)
-	}
-
-	// Route output path correctly
 	if filepath.IsAbs(output) || filepath.Dir(output) != "." {
 		outputDir := filepath.Dir(output)
 		if err := ensureOutputDirectory(cmd, outputDir); err != nil {
@@ -92,20 +64,16 @@ func runConvert(cmd *cobra.Command, args []string) error {
 	} else {
 		output = filepath.Join(dir, output)
 	}
-	output = resolveOutputPath(output) // Duplicate overwrite function
+	output = resolveOutputPath(output)
 
-	bar = progressbar.Default(-1, "Converting")
-	err = api.ImportImagesFile(args, output, nil, nil)
+	bar := progressbar.Default(-1, "Converting")
+	report, err := pdfops.Convert(args, output)
 	if err != nil {
 		return err
 	}
 	_ = bar.Finish()
 
 	fmt.Fprintln(cmd.OutOrStdout(), "===== Conversion Completed =====")
-	report, err := GetFileInfo(output, nil)
-	if err != nil {
-		return err
-	}
 	report.PrintReport(cmd.OutOrStdout())
 
 	return nil
